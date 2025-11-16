@@ -1,5 +1,8 @@
+// lib/pages/login.dart
 import 'package:flutter/material.dart';
 import 'package:to_do_project/pages/cadastro.dart';
+import 'package:to_do_project/pages/home.dart';
+
 
 class Login extends StatefulWidget {
   const Login({Key? key}) : super(key: key);
@@ -61,10 +64,10 @@ class _LoginState extends State<Login> {
         const SnackBar(content: Text('Login realizado com sucesso!')),
       );
 
-      // Depois do login, ir pra Home
+      // Depois do login, ir pra HomePage (Cinelog)
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const Login()),
+        MaterialPageRoute(builder: (context) => const HomePage()),
       );
     }
   }

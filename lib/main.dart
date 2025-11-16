@@ -38,10 +38,8 @@ class MyApp extends StatelessWidget {
         ),
       ),
 
-      // ⬇⬇⬇ AQUI você escolhe qual tela é a primeira
-      home: const Login(), // se quiser que o Login seja a primeira
-      // home: const Cadastro(), // se quiser que o Cadastro seja a primeira
-      // home: const HomePage(), // se quiser que a Home seja a primeira
+      
+      home: const Login(),
     );
   }
 }
