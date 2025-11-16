@@ -215,17 +215,16 @@ class _Top10List extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (movies.isEmpty) return const SizedBox.shrink();
-
     return SizedBox(
-      height: 220,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: 240,
+      child: ListView.separated(
         scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: movies.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
           final movie = movies[index];
-          final position = movie.top10Position ?? (index + 1);
+          final position = movie.top10Position ?? index + 1;
 
           return GestureDetector(
             onTap: () {
@@ -236,38 +235,31 @@ class _Top10List extends StatelessWidget {
                 ),
               );
             },
-            child: Container(
-              width: 140,
-              margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+            child: SizedBox(
+              width: 150,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Número grande + poster lado a lado
                   Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                    child: Stack(
                       children: [
-                        // Número
-                        Container(
-                          alignment: Alignment.bottomCenter,
-                          width: 40,
-                          child: Text(
-                            position.toString().padLeft(2, '0'),
-                            style: const TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white24,
-                            ),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            movie.posterUrl,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        // Poster
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: Image.network(
-                              movie.posterUrl,
-                              fit: BoxFit.cover,
+                        Positioned(
+                          left: 0,
+                          bottom: 0,
+                          child: Text(
+                            position.toString().padLeft(2, "0"),
+                            style: const TextStyle(
+                              fontSize: 48,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white70,
                             ),
                           ),
                         ),
@@ -280,8 +272,8 @@ class _Top10List extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 13,
                       fontWeight: FontWeight.w600,
+                      fontSize: 14,
                     ),
                   ),
                 ],
@@ -293,4 +285,3 @@ class _Top10List extends StatelessWidget {
     );
   }
 }
-
