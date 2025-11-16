@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:to_do_project/pages/login.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class Cadastro extends StatefulWidget {
   const Cadastro({Key? key}) : super(key: key);
@@ -15,6 +17,7 @@ class _CadastroState extends State<Cadastro> {
   final _nomeController = TextEditingController();
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
+
 
   static const _primary = Color.fromARGB(255, 216, 21, 7);
   static const _fill = Color(0xFF2C2929);
@@ -55,20 +58,79 @@ class _CadastroState extends State<Cadastro> {
     );
   }
 
-  void _enviarFormulario() {
-    if (_formKey.currentState!.validate()) {
-      FocusScope.of(context).unfocus();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cadastro enviado com sucesso!')),
+  void _enviarFormulario() async {
+  if (_formKey.currentState!.validate()) {
+    FocusScope.of(context).unfocus();
+    
+    // Mostrar loading
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Processando cadastro...')),
+    );
+
+    try {
+      final response = await _fazerCadastro(
+        nome: _nomeController.text.trim(),
+        email: _emailController.text.trim(),
+        senha: _senhaController.text,
       );
 
-      // Depois do cadastro, voltar pro login
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const Login()),
+      if (response['sucesso']) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cadastro realizado com sucesso!')),
+        );
+        
+        // Voltar pro login
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const Login()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response['mensagem'] ?? 'Erro ao cadastrar')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro: $e')),
       );
     }
   }
+}
+
+Future<Map<String, dynamic>> _fazerCadastro({
+  required String nome,
+  required String email,
+  required String senha,
+}) async {
+  final url = Uri.parse('http://localhost:8080/auth/register');
+  
+  try {
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'username': nome,
+        'email': email,
+        'password': senha,
+      }),
+    ).timeout(
+      const Duration(seconds: 15),
+      onTimeout: () {
+          throw Exception('Timeout na conexão com a API');
+      },
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final dados = jsonDecode(response.body);
+      return {'sucesso': true, 'mensagem': 'Cadastro realizado'};
+    } else {
+      final dados = jsonDecode(response.body);
+      return {'sucesso': false, 'mensagem': dados['mensagem'] ?? 'Erro no servidor'};
+    }
+  } catch (e) {
+    return {'sucesso': false, 'mensagem': 'Erro de conexão: $e'};
+  }
+}
 
   @override
   void dispose() {
