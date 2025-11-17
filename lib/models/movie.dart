@@ -45,9 +45,9 @@ const movies = <Movie>[
     duration: '2h 2min',
     genre: 'Romance, Fantasia',
     posterUrl:
-        'https://m.media-amazon.com/images/I/71j8damPo5L._AC_UF894,1000_QL80_.jpg',
+        'https://m.media-amazon.com/images/M/MV5BMTQ2NzUxMTAxN15BMl5BanBnXkFtZTcwMzEyMTIwMg@@._V1_.jpg',
     backdropUrl:
-        'https://m.media-amazon.com/images/I/71j8damPo5L._AC_UF894,1000_QL80_.jpg',
+        'https://wallpapers.com/images/hd/the-twilight-saga-breaking-dawn-part-1-gruj4yd9tf1lzj39.jpg',
     cast: ['Kristen Stewart', 'Robert Pattinson', 'Taylor Lautner'],
     director: 'Catherine Hardwicke',
     comments: [
@@ -68,9 +68,9 @@ const movies = <Movie>[
     duration: '1h 54min',
     genre: 'Comédia, Fantasia',
     posterUrl:
-        'https://m.media-amazon.com/images/I/71W91cV0q-L._AC_UF894,1000_QL80_.jpg',
+        'https://media.themoviedb.org/t/p/w533_and_h300_bestv2/ldFX26JW3fusyMewRoWoXYWaffw.jpg',
     backdropUrl:
-        'https://m.media-amazon.com/images/I/71W91cV0q-L._AC_UF894,1000_QL80_.jpg',
+        'https://brandedcontentbrasil.com.br/wp-content/uploads/2024/09/barbie.jpg',
     cast: ['Margot Robbie', 'Ryan Gosling'],
     director: 'Greta Gerwig',
     comments: [
@@ -91,9 +91,9 @@ const movies = <Movie>[
     duration: '1h 37min',
     genre: 'Comédia',
     posterUrl:
-        'https://m.media-amazon.com/images/I/71O5njZ1V8L._AC_UF894,1000_QL80_.jpg',
+        'https://m.media-amazon.com/images/M/MV5BMjE1MDQ4MjI1OV5BMl5BanBnXkFtZTcwNzcwODAzMw@@._V1_.jpg',
     backdropUrl:
-        'https://m.media-amazon.com/images/I/71O5njZ1V8L._AC_UF894,1000_QL80_.jpg',
+        'https://wallpapers.com/images/hd/lindsay-lohan-in-mean-girls-94332w8o49972ce5.jpg',
     cast: ['Lindsay Lohan', 'Rachel McAdams', 'Tina Fey'],
     director: 'Mark Waters',
     comments: [
@@ -114,9 +114,9 @@ const movies = <Movie>[
     duration: '2h 6min',
     genre: 'Romance, Drama',
     posterUrl:
-        'https://m.media-amazon.com/images/I/81qqpMZkq-L._AC_UF894,1000_QL80_.jpg',
+        'https://upload.wikimedia.org/wikipedia/pt/0/08/The_Fault_in_Our_Stars_%28filme%29.jpg',
     backdropUrl:
-        'https://m.media-amazon.com/images/I/81qqpMZkq-L._AC_UF894,1000_QL80_.jpg',
+        'https://images.justwatch.com/backdrop/179542145/s640/a-culpa-e-das-estrelas.jpg',
     cast: ['Shailene Woodley', 'Ansel Elgort'],
     director: 'Josh Boone',
     comments: [
@@ -137,9 +137,9 @@ const movies = <Movie>[
     duration: '2h 49min',
     genre: 'Ficção científica, Drama',
     posterUrl:
-        'https://m.media-amazon.com/images/I/71niXI3lxlL._AC_UF894,1000_QL80_.jpg',
+        'https://m.media-amazon.com/images/M/MV5BZjdkOTU3MDktN2IxOS00OGEyLWFmMjktY2FiMmZkNWIyODZiXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg',
     backdropUrl:
-        'https://m.media-amazon.com/images/I/71niXI3lxlL._AC_UF894,1000_QL80_.jpg',
+        'https://images.hdqwalls.com/wallpapers/interstellar-gargantua-4k-2n.jpg',
     cast: ['Matthew McConaughey', 'Anne Hathaway', 'Jessica Chastain'],
     director: 'Christopher Nolan',
     comments: [

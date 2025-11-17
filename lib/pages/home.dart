@@ -1,6 +1,7 @@
 // lib/pages/home.dart
 import 'package:flutter/material.dart';
 import 'package:to_do_project/models/movie.dart';
+import 'package:to_do_project/pages/AddMoviePage.dart';
 import 'package:to_do_project/pages/movie.detail.dart';
 
 class HomePage extends StatelessWidget {
@@ -45,6 +46,16 @@ class HomePage extends StatelessWidget {
           _buildSectionTitle('Top 10 do Cinelog'),
           _Top10List(movies: top10),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const AddMoviePage()),
+        );
+      },
+      backgroundColor: _primary,
+      child: const Icon(Icons.add),
       ),
     );
   }

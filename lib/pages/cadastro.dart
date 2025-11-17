@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class Cadastro extends StatefulWidget {
-  const Cadastro({Key? key}) : super(key: key);
+  const Cadastro({super.key});
 
   @override
   State<Cadastro> createState() => _CadastroState();
@@ -85,6 +85,7 @@ class _CadastroState extends State<Cadastro> {
           MaterialPageRoute(builder: (context) => const Login()),
         );
       } else {
+        print("Cadastro falhou: ${response}");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(response['mensagem'] ?? 'Erro ao cadastrar')),
         );
@@ -125,7 +126,7 @@ Future<Map<String, dynamic>> _fazerCadastro({
       return {'sucesso': true, 'mensagem': 'Cadastro realizado'};
     } else {
       final dados = jsonDecode(response.body);
-      return {'sucesso': false, 'mensagem': dados['mensagem'] ?? 'Erro no servidor'};
+      return {'sucesso': false, 'mensagem': dados["error"] ?? 'Erro no servidor'};
     }
   } catch (e) {
     return {'sucesso': false, 'mensagem': 'Erro de conexão: $e'};
