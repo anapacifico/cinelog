@@ -51,21 +51,6 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                 Image.network(
                   movie.backdropUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    color: const Color(0xFF1E1E1E),
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.broken_image_outlined, size: 48),
-                  ),
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    final value = loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
-                        : null;
-                    return Center(
-                      child: CircularProgressIndicator(value: value),
-                    );
-                  },
                 ),
                 Container(
                   decoration: const BoxDecoration(
