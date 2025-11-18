@@ -4,17 +4,60 @@ import 'dart:convert';
 List<Movie> movieListFromJson(String str) =>
     List<Movie>.from(json.decode(str).map((x) => Movie.fromJson(x)));
 
+class Ator {
+  final String nome;
+  final String personagem;
+
+  Ator({
+    required this.nome,
+    required this.personagem,
+  });
+
+  factory Ator.fromJson(Map<String, dynamic> json) {
+    return Ator(
+      nome: json['nome'] ?? 'Desconhecido',
+      personagem: json['personagem'] ?? 'N/A',
+    );
+  }
+}
+
+class Comentario {
+  final int id;
+  final String texto;
+  final String nomeUsuario;
+  final DateTime dataCriacao;
+
+  Comentario({
+    required this.id,
+    required this.texto,
+    required this.nomeUsuario,
+    required this.dataCriacao,
+  });
+
+  factory Comentario.fromJson(Map<String, dynamic> json) {
+    return Comentario(
+      id: json['id'],
+      texto: json['texto'],
+      nomeUsuario: json['usuario']['username'] ?? 'Usuário Desconhecido',
+      dataCriacao: DateTime.parse(json['dataCriacao']),
+    );
+  }
+}
+
 class Movie {
   final int id;
   final String title;
-  final String synopsis; // No seu DTO é 'descricao'
-  final DateTime releaseDate; // No seu DTO é 'dataLancamento'
-  final int durationMinutes; // No seu DTO é 'duracaoMinutos'
-  final double averageRating; // No seu DTO é 'mediaAvaliacoes'
-  final int likes; // No seu DTO é 'quantidadeCurtidas'
-  final String backdropUrl; // No seu DTO é 'capaUrl'
-  final String posterUrl; // No seu DTO é 'posterUrl'
-  final List<int> genreIds; // No seu DTO é 'generos'
+  final String synopsis; 
+  final DateTime releaseDate; 
+  final int durationMinutes; 
+  final double averageRating; 
+  final int likes;
+  final String backdropUrl; 
+  final String posterUrl; 
+  final List<int> genreIds; 
+  final String? director; 
+  final List<Ator>? actors;
+  final List<Comentario>? comentarios; 
 
   Movie({
     required this.id,
@@ -27,6 +70,9 @@ class Movie {
     required this.backdropUrl,
     required this.posterUrl,
     required this.genreIds,
+    this.director,
+    this.actors,
+    this.comentarios,
   });
 
   factory Movie.fromJson(Map<String, dynamic> json) {
@@ -41,6 +87,56 @@ class Movie {
       return '$API_BASE_URL$url';
     }
 
+    String? director;
+    List<Ator> actors = [];
+
+
+    if (json['diretor'] != null) {
+      director = json['diretor'];
+    } else if (json['elenco'] != null && json['elenco'] is Map) {
+      director = json['elenco']['diretor'];
+    }
+
+    if (json['atores'] != null && json['atores'] is List) {
+      print('Atores encontrados (direto - array simples): ${json['atores']}');
+      actors = (json['atores'] as List)
+          .map((ator) {
+            if (ator is String) {
+              return Ator(nome: ator, personagem: 'N/A');
+            } else if (ator is Map) {
+              return Ator.fromJson(ator.cast<String, dynamic>());
+            }
+            return Ator(nome: 'Desconhecido', personagem: 'N/A');
+          })
+          .toList();
+    } else if (json['elenco'] != null && json['elenco'] is List) {
+      actors = (json['elenco'] as List)
+          .map((ator) {
+            if (ator is Map) {
+              return Ator.fromJson(ator.cast<String, dynamic>());
+            }
+            return Ator(nome: 'Desconhecido', personagem: 'N/A');
+          })
+          .toList();
+    } else if (json['elenco'] != null && 
+               json['elenco'] is Map && 
+               json['elenco']['atores'] != null) {
+      actors = (json['elenco']['atores'] as List)
+          .map((ator) => ator is Map 
+              ? Ator.fromJson(ator.cast<String, dynamic>()) 
+              : Ator(nome: ator.toString(), personagem: 'N/A'))
+          .toList();
+    } else {
+    }
+
+    // Processa comentários
+    List<Comentario> comentarios = [];
+    if (json['comentarios'] != null && json['comentarios'] is List) {
+      comentarios = (json['comentarios'] as List)
+          .map((com) => Comentario.fromJson(com.cast<String, dynamic>()))
+          .toList();
+    }
+
     return Movie(
       id: json['id'],
       title: json['titulo'],
@@ -49,18 +145,19 @@ class Movie {
       durationMinutes: json['duracaoMinutos'],
       averageRating: (json['mediaAvaliacoes'] as num).toDouble(),
       likes: json['quantidadeCurtidas'],
-      backdropUrl: safeUrl(json['capaUrl']), // Mapeia 'capaUrl' para 'backdropUrl'
+      backdropUrl: safeUrl(json['capaUrl']),
       posterUrl: safeUrl(json['posterUrl']),
       genreIds: List<int>.from(json['generos'].map((x) => x)),
+      director: director,
+      actors: actors,
+      comentarios: comentarios,
     );
   }
 
-  // Você pode manter os campos antigos (isFeatured, etc.) se quiser
-  // mas eles não virão da sua API
   bool get isFeatured =>
-      true; // Lógica de mock, já que a API não tem esse campo
+      true; 
   int? get top10Position =>
-      null; // O widget do Top10 já usa o 'index' se isso for nulo
+      null;
   String get genre =>
-      'Filme'; // Você teria que mapear os genreIds para nomes
+      'Filme'; 
 }

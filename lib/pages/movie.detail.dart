@@ -114,7 +114,6 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Título + duração + gênero
                 Text(
                   movie.title,
                   style: const TextStyle(
@@ -127,24 +126,16 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                   spacing: 8,
                   runSpacing: 4,
                   children: [
-                    // <<< MUDANÇA: 'durationMinutes' vem da API (OK)
                     _ChipInfo(icon: Icons.access_time, text: '${movie.durationMinutes} min'),
-                    
-                    // <<< MUDANÇA: Removidos 'genre' e 'director'
-                    // _ChipInfo(icon: Icons.local_movies, text: movie.genre), // ❌ REMOVIDO
-                    // _ChipInfo(icon: Icons.person, text: 'Dir: ${movie.director}'), // ❌ REMOVIDO
-
-                    // (Opcional) Mostrar o ano de lançamento
                     _ChipInfo(icon: Icons.calendar_today, text: movie.releaseDate.year.toString()),
                   ],
                 ),
                 const SizedBox(height: 16),
 
-                // Botão curtir + contagem (agora chama a API)
                 Row(
                   children: [
                     IconButton(
-                      onPressed: _toggleLike, // Chama a nova função async
+                      onPressed: _toggleLike, 
                       icon: Icon(
                         _isLiked ? Icons.favorite : Icons.favorite_border,
                         color: _isLiked ? _primary : Colors.white,
@@ -164,42 +155,233 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  movie.synopsis, // <<< MUDANÇA: 'synopsis' vem de 'descricao' (OK)
+                  movie.synopsis,
                   style: const TextStyle(
                     fontSize: 14,
                     color: Colors.white70,
                   ),
                 ),
 
-                // ---
-                // --- ❌ SEÇÕES REMOVIDAS POIS NÃO EXISTEM NA API ---
-                // ---
+                if (movie.director != null && movie.director!.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Diretor',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    movie.director!,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
 
-                // const SizedBox(height: 16),
-                // const Text(
-                //   'Elenco',
-                //   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                // ),
-                // const SizedBox(height: 8),
-                // Wrap(
-                //   spacing: 8,
-                //   runSpacing: 8,
-                //   children: movie.cast.map((actor) => Chip(...)).toList(),
-                // ),
+                if (movie.actors != null && movie.actors!.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Elenco',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...movie.actors!.map((ator) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.person, size: 20, color: _primary),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  ator.nome,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  'como ${ator.personagem}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ],
 
-                // const SizedBox(height: 16),
-                // const Text(
-                //   'Comentários',
-                //   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                // ),
-                // const SizedBox(height: 8),
-                // ...movie.comments.map((c) => Container(...)),
+                // <<< MUDANÇA: Seção de Comentários
+                const SizedBox(height: 24),
+                const Text(
+                  'Comentários',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Formulário para adicionar novo comentário
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextFormField(
+                        controller: _comentarioController,
+                        maxLines: 3,
+                        minLines: 1,
+                        enabled: !_isAddingComentario,
+                        decoration: InputDecoration(
+                          hintText: 'Adicione um comentário...',
+                          hintStyle: const TextStyle(color: Colors.white60),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: Colors.white30),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: Colors.white30),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: _primary),
+                          ),
+                          contentPadding: const EdgeInsets.all(12),
+                        ),
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: ElevatedButton(
+                          onPressed: _isAddingComentario ? null : _adicionarComentario,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _primary,
+                            disabledBackgroundColor: Colors.grey.withOpacity(0.5),
+                          ),
+                          child: _isAddingComentario
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : const Text('Enviar'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Lista de comentários existentes
+                if (movie.comentarios != null && movie.comentarios!.isNotEmpty) ...[
+                  ...movie.comentarios!.map((comentario) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12.0),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.white12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  comentario.nomeUsuario,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: _primary,
+                                  ),
+                                ),
+                                Text(
+                                  _formatarData(comentario.dataCriacao),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white60,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              comentario.texto,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ] else ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    child: Center(
+                      child: Text(
+                        'Nenhum comentário ainda. Seja o primeiro!',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white60,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  String _formatarData(DateTime data) {
+    final agora = DateTime.now();
+    final diferenca = agora.difference(data);
+
+    if (diferenca.inSeconds < 60) {
+      return 'agora';
+    } else if (diferenca.inMinutes < 60) {
+      return '${diferenca.inMinutes}m atrás';
+    } else if (diferenca.inHours < 24) {
+      return '${diferenca.inHours}h atrás';
+    } else if (diferenca.inDays < 7) {
+      return '${diferenca.inDays}d atrás';
+    } else {
+      return '${data.day}/${data.month}/${data.year}';
+    }
   }
 }
 

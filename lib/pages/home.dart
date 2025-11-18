@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:to_do_project/models/movie.dart'; // <<< IMPORTA O NOVO MODEL
 import 'package:to_do_project/pages/AddMoviePage.dart';
 import 'package:to_do_project/pages/movie.detail.dart';
+import 'package:to_do_project/pages/profile.dart';
 
 const Color kCinelogPrimary = Color.fromARGB(255, 216, 21, 7);
 
@@ -86,36 +87,46 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        // ... (seu AppBar não muda) ...
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('Cinelog', /*...*/),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Icon(Icons.person_outline),
+        title: const Text('Cinelog'),
+        actions: [
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfilePage()),
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Icon(
+                Icons.person_outline,
+                color: Colors.white,
+                size: 28,
+              ),
+            ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        // ... (seu FloatingActionButton não muda) ...
         onPressed: () {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const AddMoviePage()),
-          );
+          ).then((_) {
+            _fetchData();
+          });
         },
         backgroundColor: kCinelogPrimary,
         child: const Icon(Icons.add),
       ),
-      body: _buildBody(), // Chama um helper para o body
+      body: _buildBody(),
     );
   }
 
-  /// Constrói o corpo da tela baseado no estado (Loading, Erro, Sucesso)
   Widget _buildBody() {
     if (_isLoading) {
-      // --- ESTADO DE LOADING ---
       return const Center(
         child: CircularProgressIndicator(
           valueColor: AlwaysStoppedAnimation(kCinelogPrimary),
@@ -124,7 +135,6 @@ class _HomePageState extends State<HomePage> {
     }
 
     if (_errorMessage != null) {
-      // --- ESTADO DE ERRO ---
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -140,7 +150,7 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
-                onPressed: _fetchData, // Tenta de novo
+                onPressed: _fetchData, 
                 icon: const Icon(Icons.refresh),
                 label: const Text('Tentar Novamente'),
                 style: ElevatedButton.styleFrom(
@@ -153,14 +163,13 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    // --- ESTADO DE SUCESSO (Seu ListView) ---
     return ListView(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 24),
       children: [
         // Usa os dados da API
         _buildSectionTitle('Em destaque'),
-        _FeaturedCarousel(movies: _recentesFilmes), // Usando recentes p/ destaque
+        _FeaturedCarousel(movies: _recentesFilmes), 
 
         _buildSectionTitle('Adicionados recentemente'),
         _HorizontalMovieList(movies: _recentesFilmes),
@@ -177,7 +186,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Seu helper _buildSectionTitle (não muda)
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -192,17 +200,6 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// =====================================================================
-// --- SEUS SUB-WIDGETS PRIVADOS (Quase nenhuma mudança) ---
-//
-// Os widgets _FeaturedCarousel, _HorizontalMovieList, e _Top10List
-// só precisam de uma pequena mudança:
-// Mudar `List<Movie>` para `List<Movie>` (que agora é o nosso novo model)
-//
-// ... E o _Top10Card usava 'movie.genre' que não vem da API.
-// Eu comentei essa linha.
-// =====================================================================
-
 class _FeaturedCarousel extends StatefulWidget {
   final List<Movie> movies; // <<< JÁ USA O MODEL NOVO
 
@@ -213,7 +210,6 @@ class _FeaturedCarousel extends StatefulWidget {
 }
 
 class _FeaturedCarouselState extends State<_FeaturedCarousel> {
-  // ... (Toda a lógica interna do _FeaturedCarousel não muda) ...
   late final PageController _pageController;
 
   @override
@@ -353,7 +349,6 @@ class _HorizontalMovieList extends StatefulWidget {
 }
 
 class _HorizontalMovieListState extends State<_HorizontalMovieList> {
-  // ... (Toda a lógica interna do _HorizontalMovieList não muda) ...
   final ScrollController _scrollController = ScrollController();
 
   @override

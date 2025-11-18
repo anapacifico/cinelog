@@ -2,8 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:to_do_project/pages/cadastro.dart';
 import 'package:to_do_project/pages/home.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:to_do_project/services/auth_service.dart';
 
 
 class Login extends StatefulWidget {
@@ -69,7 +68,7 @@ class _LoginState extends State<Login> {
       );
 
       try {
-        final response = await _fazerLogin(
+        final response = await AuthService.login(
           login: _loginController.text.trim(),
           senha: _senhaController.text,
         );
@@ -79,7 +78,7 @@ class _LoginState extends State<Login> {
             const SnackBar(content: Text('Login realizado com sucesso!')),
           );
           
-          // Ir pra HomePage (Cinelog)
+          // Navegar para HomePage após login bem-sucedido
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const HomePage()),
@@ -94,51 +93,6 @@ class _LoginState extends State<Login> {
           SnackBar(content: Text('Erro: $e')),
         );
       }
-    }
-  }
-
-  Future<Map<String, dynamic>> _fazerLogin({
-    required String login,
-    required String senha,
-  }) async {
-    //final url = Uri.parse('http://10.0.2.2:8080/auth/login');
-    final url = Uri.parse('http://localhost:8080/auth/login');
-    print("=== INICIANDO LOGIN ===");
-    print("URL de login: $url");
-    print("Dados: login=$login");
-    
-    try {
-      print("Enviando requisição POST...");
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'login': login,
-          'password': senha,
-        }),
-      ).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          print("TIMEOUT: A requisição demorou mais de 10 segundos!");
-          throw Exception('Timeout na conexão com a API');
-        },
-      );
-
-      print("Status Code: ${response.statusCode}");
-      print("Response Body: ${response.body}");
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final dados = jsonDecode(response.body);
-        print("Login realizado com sucesso!");
-        return {'sucesso': true, 'mensagem': 'Login realizado'};
-      } else {
-        print("Erro: Status ${response.statusCode}");
-        final dados = jsonDecode(response.body);
-        return {'sucesso': false, 'mensagem': dados['mensagem'] ?? 'Erro no servidor'};
-      }
-    } catch (e) {
-      print("ERRO NA REQUISIÇÃO: $e");
-      return {'sucesso': false, 'mensagem': 'Erro de conexão: $e'};
     }
   }
 

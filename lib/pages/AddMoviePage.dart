@@ -9,6 +9,7 @@ import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
 
 import 'package:to_do_project/models/genero.dart';
+import 'package:to_do_project/services/auth_service.dart';
 
 //const String API_BASE_URL = 'http://10.0.2.2:8081';
 const String API_BASE_URL = 'http://localhost:8081';
@@ -337,6 +338,21 @@ class _AddMoviePageState extends State<AddMoviePage> {
     });
 
     try {
+      // Recuperar o ID do usuário logado
+      final userId = await AuthService.getUserId();
+      if (userId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erro: Usuário não autenticado'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() {
+          _isSubmitting = false;
+        });
+        return;
+      }
+
       final List<Map<String, String>> atoresList = _atoresFormList
           .map((atorForm) => {
                 "nome": atorForm.nomeController.text,
@@ -356,7 +372,7 @@ class _AddMoviePageState extends State<AddMoviePage> {
         "descricao": _descricaoController.text,
         "dataLancamento": _selectedDate!.toIso8601String().split('T').first,
         "duracaoMinutos": int.parse(_duracaoController.text),
-        "idUser": "seu_id_de_usuario_aqui",
+        "idUser": userId,
         "generosId": _generosSelecionadosId.toList(),
         "elenco": elencoDto,
       };
