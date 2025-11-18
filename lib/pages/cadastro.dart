@@ -103,8 +103,8 @@ Future<Map<String, dynamic>> _fazerCadastro({
   required String email,
   required String senha,
 }) async {
+  //final url = Uri.parse('http://10.0.2.2:8080/auth/register');
   final url = Uri.parse('http://localhost:8080/auth/register');
-  
   try {
     final response = await http.post(
       url,

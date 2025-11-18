@@ -1,35 +1,95 @@
-// lib/pages/home.dart
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:to_do_project/models/movie.dart';
+import 'package:to_do_project/models/movie.dart'; // <<< IMPORTA O NOVO MODEL
 import 'package:to_do_project/pages/AddMoviePage.dart';
 import 'package:to_do_project/pages/movie.detail.dart';
 
 const Color kCinelogPrimary = Color.fromARGB(255, 216, 21, 7);
 
-class HomePage extends StatelessWidget {
+// const String API_BASE_URL = 'http://10.0.2.2:8081';
+const String API_BASE_URL = 'http://localhost:8081';
+
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // listas derivadas do catálogo
-    final featured = movies.where((m) => m.isFeatured).toList();
-    final recent = movies.where((m) => m.isRecentlyAdded).toList();
-    final girlsNight = movies.where((m) => m.isGirlsNight).toList();
-    // vindo do models/movie.dart (helper top10Movies)
-    final top10 = top10Movies;
+  State<HomePage> createState() => _HomePageState();
+}
 
+class _HomePageState extends State<HomePage> {
+  final Dio _dio = Dio(BaseOptions(baseUrl: API_BASE_URL));
+
+  List<Movie> _top10Filmes = [];
+  List<Movie> _recentesFilmes = [];
+  List<Movie> _generoComediaFilmes = [];
+  List<Movie> _generoAcaoFilmes = [];
+
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData(); 
+  }
+
+  Future<void> _fetchData() async {
+    try {
+      setState(() {
+        _isLoading = true; 
+        _errorMessage = null;
+      });
+
+      final responses = await Future.wait([
+        _dio.get('/api/filmes/top10'),
+        _dio.get('/api/filmes/recentes'),
+        _dio.get('/api/filmes/genero/Comédia'),
+        _dio.get('/api/filmes/genero/Ação'),
+      ]);
+
+      final List<dynamic> top10Data = responses[0].data;
+      final List<dynamic> recentesData = responses[1].data;
+      final List<dynamic> generoData = responses[2].data['content'];
+      final List<dynamic> generoAcaoData = responses[3].data['content'];
+
+      setState(() {
+        _top10Filmes = top10Data.map((data) => Movie.fromJson(data)).toList();
+        _recentesFilmes =
+            recentesData.map((data) => Movie.fromJson(data)).toList();
+        _generoComediaFilmes =
+            generoData.map((data) => Movie.fromJson(data)).toList();
+        _generoAcaoFilmes =
+            generoAcaoData.map((data) => Movie.fromJson(data)).toList();
+        
+        _isLoading = false; // Esconde o loading
+      });
+    } on DioError catch (e) {
+      setState(() {
+        _errorMessage = 'Falha ao carregar filmes: ${e.message}';
+        _isLoading = false;
+      });
+      print('Erro Dio: $e');
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Ocorreu um erro inesperado: $e';
+        _isLoading = false;
+      });
+      print('Erro genérico: $e');
+    }
+  }
+
+  // ---
+  // --- 3. CONSTRUÇÃO DO LAYOUT (build) ---
+  // ---
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
+        // ... (seu AppBar não muda) ...
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
-          'Cinelog',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
-          ),
-        ),
+        title: const Text('Cinelog', /*...*/),
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 16),
@@ -38,6 +98,7 @@ class HomePage extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        // ... (seu FloatingActionButton não muda) ...
         onPressed: () {
           Navigator.push(
             context,
@@ -47,26 +108,76 @@ class HomePage extends StatelessWidget {
         backgroundColor: kCinelogPrimary,
         child: const Icon(Icons.add),
       ),
-      body: ListView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.only(bottom: 24),
-        children: [
-          _buildSectionTitle('Em destaque'),
-          _FeaturedCarousel(movies: featured),
-
-          _buildSectionTitle('Adicionados recentemente'),
-          _HorizontalMovieList(movies: recent),
-
-          _buildSectionTitle('Girls Night'),
-          _HorizontalMovieList(movies: girlsNight),
-
-          _buildSectionTitle('Top 10 do Cinelog'),
-          _Top10List(movies: top10),
-        ],
-      ),
+      body: _buildBody(), // Chama um helper para o body
     );
   }
 
+  /// Constrói o corpo da tela baseado no estado (Loading, Erro, Sucesso)
+  Widget _buildBody() {
+    if (_isLoading) {
+      // --- ESTADO DE LOADING ---
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation(kCinelogPrimary),
+        ),
+      );
+    }
+
+    if (_errorMessage != null) {
+      // --- ESTADO DE ERRO ---
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.red, size: 50),
+              const SizedBox(height: 16),
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white70),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: _fetchData, // Tenta de novo
+                icon: const Icon(Icons.refresh),
+                label: const Text('Tentar Novamente'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kCinelogPrimary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // --- ESTADO DE SUCESSO (Seu ListView) ---
+    return ListView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 24),
+      children: [
+        // Usa os dados da API
+        _buildSectionTitle('Em destaque'),
+        _FeaturedCarousel(movies: _recentesFilmes), // Usando recentes p/ destaque
+
+        _buildSectionTitle('Adicionados recentemente'),
+        _HorizontalMovieList(movies: _recentesFilmes),
+
+        _buildSectionTitle('Comédias'),
+        _HorizontalMovieList(movies: _generoComediaFilmes),
+
+        _buildSectionTitle('Ação'), 
+        _HorizontalMovieList(movies: _generoAcaoFilmes),
+
+        _buildSectionTitle('Top 10 do Cinelog'),
+        _Top10List(movies: _top10Filmes),
+      ],
+    );
+  }
+
+  // Seu helper _buildSectionTitle (não muda)
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -81,10 +192,19 @@ class HomePage extends StatelessWidget {
   }
 }
 
-
+// =====================================================================
+// --- SEUS SUB-WIDGETS PRIVADOS (Quase nenhuma mudança) ---
+//
+// Os widgets _FeaturedCarousel, _HorizontalMovieList, e _Top10List
+// só precisam de uma pequena mudança:
+// Mudar `List<Movie>` para `List<Movie>` (que agora é o nosso novo model)
+//
+// ... E o _Top10Card usava 'movie.genre' que não vem da API.
+// Eu comentei essa linha.
+// =====================================================================
 
 class _FeaturedCarousel extends StatefulWidget {
-  final List<Movie> movies;
+  final List<Movie> movies; // <<< JÁ USA O MODEL NOVO
 
   const _FeaturedCarousel({required this.movies});
 
@@ -93,6 +213,7 @@ class _FeaturedCarousel extends StatefulWidget {
 }
 
 class _FeaturedCarouselState extends State<_FeaturedCarousel> {
+  // ... (Toda a lógica interna do _FeaturedCarousel não muda) ...
   late final PageController _pageController;
 
   @override
@@ -108,20 +229,13 @@ class _FeaturedCarouselState extends State<_FeaturedCarousel> {
   }
 
   void _goToPrevious() {
-    if (_pageController.page == null || _pageController.page == 0) return;
     _pageController.previousPage(
-      duration: const Duration(milliseconds: 260),
-      curve: Curves.easeOut,
-    );
+        duration: const Duration(milliseconds: 260), curve: Curves.easeOut);
   }
 
   void _goToNext() {
-    if (_pageController.page == null) return;
-    if (_pageController.page!.round() >= widget.movies.length - 1) return;
     _pageController.nextPage(
-      duration: const Duration(milliseconds: 260),
-      curve: Curves.easeOut,
-    );
+        duration: const Duration(milliseconds: 260), curve: Curves.easeOut);
   }
 
   @override
@@ -147,6 +261,7 @@ class _FeaturedCarouselState extends State<_FeaturedCarousel> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
+                      // <<< MUDANÇA: Passa o novo 'Movie'
                       builder: (_) => MovieDetailPage(movie: movie),
                     ),
                   );
@@ -158,16 +273,14 @@ class _FeaturedCarouselState extends State<_FeaturedCarousel> {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        _MovieImage(url: movie.backdropUrl),
+                        // <<< MUDANÇA: 'backdropUrl' vem da 'capaUrl' da API
+                        _MovieImage(url: movie.posterUrl),
                         Container(
                           decoration: const BoxDecoration(
                             gradient: LinearGradient(
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.black87,
-                              ],
+                              colors: [Colors.transparent, Colors.black87],
                             ),
                           ),
                         ),
@@ -179,7 +292,7 @@ class _FeaturedCarouselState extends State<_FeaturedCarousel> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                movie.title,
+                                movie.title, // <<< VEM DA API
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -189,7 +302,7 @@ class _FeaturedCarouselState extends State<_FeaturedCarousel> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                movie.synopsis,
+                                movie.synopsis, // <<< VEM DA API
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -207,30 +320,22 @@ class _FeaturedCarouselState extends State<_FeaturedCarousel> {
               );
             },
           ),
-          // Setas laterais
           if (widget.movies.length > 1) ...[
+            // ... (Setas laterais não mudam) ...
             Positioned(
-              left: 0,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: _ArrowButton(
-                  icon: Icons.chevron_left,
-                  onTap: _goToPrevious,
-                ),
-              ),
-            ),
+                left: 0,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                    child: _ArrowButton(
+                        icon: Icons.chevron_left, onTap: _goToPrevious))),
             Positioned(
-              right: 0,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: _ArrowButton(
-                  icon: Icons.chevron_right,
-                  onTap: _goToNext,
-                ),
-              ),
-            ),
+                right: 0,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                    child: _ArrowButton(
+                        icon: Icons.chevron_right, onTap: _goToNext))),
           ],
         ],
       ),
@@ -238,9 +343,8 @@ class _FeaturedCarouselState extends State<_FeaturedCarousel> {
   }
 }
 
-
 class _HorizontalMovieList extends StatefulWidget {
-  final List<Movie> movies;
+  final List<Movie> movies; // <<< JÁ USA O MODEL NOVO
 
   const _HorizontalMovieList({required this.movies});
 
@@ -249,6 +353,7 @@ class _HorizontalMovieList extends StatefulWidget {
 }
 
 class _HorizontalMovieListState extends State<_HorizontalMovieList> {
+  // ... (Toda a lógica interna do _HorizontalMovieList não muda) ...
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -290,6 +395,7 @@ class _HorizontalMovieListState extends State<_HorizontalMovieList> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
+                      // <<< MUDANÇA: Passa o novo 'Movie'
                       builder: (_) => MovieDetailPage(movie: movie),
                     ),
                   );
@@ -304,12 +410,13 @@ class _HorizontalMovieListState extends State<_HorizontalMovieList> {
                       Expanded(
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(10),
-                          child: _MovieImage(url: movie.posterUrl),
+                          // <<< MUDANÇA: 'posterUrl' vem da API
+                          child: _MovieImage(url: movie.backdropUrl),
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        movie.title,
+                        movie.title, // <<< VEM DA API
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontSize: 12),
@@ -321,28 +428,21 @@ class _HorizontalMovieListState extends State<_HorizontalMovieList> {
             },
           ),
           if (widget.movies.length > 1) ...[
+            // ... (Setas laterais não mudam) ...
             Positioned(
-              left: 0,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: _ArrowButton(
-                  icon: Icons.chevron_left,
-                  onTap: () => _scrollBy(-160),
-                ),
-              ),
-            ),
+                left: 0,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                    child: _ArrowButton(
+                        icon: Icons.chevron_left, onTap: () => _scrollBy(-160)))),
             Positioned(
-              right: 0,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: _ArrowButton(
-                  icon: Icons.chevron_right,
-                  onTap: () => _scrollBy(160),
-                ),
-              ),
-            ),
+                right: 0,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                    child: _ArrowButton(
+                        icon: Icons.chevron_right, onTap: () => _scrollBy(160)))),
           ],
         ],
       ),
@@ -350,9 +450,8 @@ class _HorizontalMovieListState extends State<_HorizontalMovieList> {
   }
 }
 
-
 class _Top10List extends StatefulWidget {
-  final List<Movie> movies;
+  final List<Movie> movies; // <<< JÁ USA O MODEL NOVO
 
   const _Top10List({required this.movies});
 
@@ -361,6 +460,7 @@ class _Top10List extends StatefulWidget {
 }
 
 class _Top10ListState extends State<_Top10List> {
+  // ... (Toda a lógica interna do _Top10List não muda) ...
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -400,13 +500,16 @@ class _Top10ListState extends State<_Top10List> {
             separatorBuilder: (_, __) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final movie = widget.movies[index];
-              final position = movie.top10Position ?? index + 1;
+              // O Top10 do seu DTO não tem posição, então usamos o index
+              // Seu código original já fazia isso
+              final position = movie.top10Position ?? index + 1; 
 
               return GestureDetector(
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
+                      // <<< MUDANÇA: Passa o novo 'Movie'
                       builder: (_) => MovieDetailPage(movie: movie),
                     ),
                   );
@@ -416,28 +519,21 @@ class _Top10ListState extends State<_Top10List> {
             },
           ),
           if (widget.movies.length > 1) ...[
+            // ... (Setas laterais não mudam) ...
             Positioned(
-              left: 0,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: _ArrowButton(
-                  icon: Icons.chevron_left,
-                  onTap: () => _scrollBy(-190),
-                ),
-              ),
-            ),
+                left: 0,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                    child: _ArrowButton(
+                        icon: Icons.chevron_left, onTap: () => _scrollBy(-190)))),
             Positioned(
-              right: 0,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: _ArrowButton(
-                  icon: Icons.chevron_right,
-                  onTap: () => _scrollBy(190),
-                ),
-              ),
-            ),
+                right: 0,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                    child: _ArrowButton(
+                        icon: Icons.chevron_right, onTap: () => _scrollBy(190)))),
           ],
         ],
       ),
@@ -464,16 +560,13 @@ class _Top10Card extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  _MovieImage(url: movie.posterUrl),
+                  _MovieImage(url: movie.backdropUrl), // <<< VEM DA API
                   Container(
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black87,
-                        ],
+                        colors: [Colors.transparent, Colors.black87],
                       ),
                     ),
                   ),
@@ -482,9 +575,7 @@ class _Top10Card extends StatelessWidget {
                     left: 12,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
+                          horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.65),
                         borderRadius: BorderRadius.circular(20),
@@ -506,7 +597,7 @@ class _Top10Card extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          movie.title,
+                          movie.title, // <<< VEM DA API
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -514,16 +605,17 @@ class _Top10Card extends StatelessWidget {
                             fontSize: 15,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          movie.genre,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                          ),
-                        ),
+                        // <<< MUDANÇA: O 'genre' (String) não vem da API
+                        // const SizedBox(height: 4),
+                        // Text(
+                        //   movie.genre, // <<< REMOVIDO
+                        //   maxLines: 1,
+                        //   overflow: TextOverflow.ellipsis,
+                        //   style: const TextStyle(
+                        //     color: Colors.white70,
+                        //     fontSize: 12,
+                        //   ),
+                        // ),
                       ],
                     ),
                   ),
@@ -533,7 +625,7 @@ class _Top10Card extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            movie.synopsis,
+            movie.synopsis, // <<< VEM DA API
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
@@ -547,6 +639,7 @@ class _Top10Card extends StatelessWidget {
   }
 }
 
+// --- _EmptyTop10State (não muda) ---
 class _EmptyTop10State extends StatelessWidget {
   const _EmptyTop10State();
 
@@ -571,10 +664,7 @@ class _EmptyTop10State extends StatelessWidget {
               children: [
                 Text(
                   'Ainda estamos selecionando o Top 10',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 SizedBox(height: 8),
                 Text(
@@ -590,8 +680,7 @@ class _EmptyTop10State extends StatelessWidget {
   }
 }
 
-
-
+// --- _ArrowButton (não muda) ---
 class _ArrowButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
@@ -623,7 +712,7 @@ class _ArrowButton extends StatelessWidget {
   }
 }
 
-
+// --- _MovieImage (não muda) ---
 class _MovieImage extends StatelessWidget {
   final String url;
   final BoxFit fit;

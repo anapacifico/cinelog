@@ -2,10 +2,12 @@
 import 'package:flutter/material.dart';
 import 'package:to_do_project/pages/cadastro.dart';
 import 'package:to_do_project/pages/home.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 
 class Login extends StatefulWidget {
-  const Login({Key? key}) : super(key: key);
+  const Login({super.key});
 
   @override
   State<Login> createState() => _LoginState();
@@ -15,7 +17,7 @@ class _LoginState extends State<Login> {
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
 
-  final _emailController = TextEditingController();
+  final _loginController = TextEditingController();
   final _senhaController = TextEditingController();
 
   static const _primary = Color.fromARGB(255, 216, 21, 7);
@@ -57,24 +59,92 @@ class _LoginState extends State<Login> {
     );
   }
 
-  void _enviarFormulario() {
+  void _enviarFormulario() async {
     if (_formKey.currentState!.validate()) {
       FocusScope.of(context).unfocus();
+      
+      // Mostrar loading
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login realizado com sucesso!')),
+        const SnackBar(content: Text('Processando login...')),
       );
 
-      // Depois do login, ir pra HomePage (Cinelog)
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
+      try {
+        final response = await _fazerLogin(
+          login: _loginController.text.trim(),
+          senha: _senhaController.text,
+        );
+
+        if (response['sucesso']) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Login realizado com sucesso!')),
+          );
+          
+          // Ir pra HomePage (Cinelog)
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomePage()),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(response['mensagem'] ?? 'Erro ao fazer login')),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro: $e')),
+        );
+      }
+    }
+  }
+
+  Future<Map<String, dynamic>> _fazerLogin({
+    required String login,
+    required String senha,
+  }) async {
+    //final url = Uri.parse('http://10.0.2.2:8080/auth/login');
+    final url = Uri.parse('http://localhost:8080/auth/login');
+    print("=== INICIANDO LOGIN ===");
+    print("URL de login: $url");
+    print("Dados: login=$login");
+    
+    try {
+      print("Enviando requisição POST...");
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'login': login,
+          'password': senha,
+        }),
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          print("TIMEOUT: A requisição demorou mais de 10 segundos!");
+          throw Exception('Timeout na conexão com a API');
+        },
       );
+
+      print("Status Code: ${response.statusCode}");
+      print("Response Body: ${response.body}");
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final dados = jsonDecode(response.body);
+        print("Login realizado com sucesso!");
+        return {'sucesso': true, 'mensagem': 'Login realizado'};
+      } else {
+        print("Erro: Status ${response.statusCode}");
+        final dados = jsonDecode(response.body);
+        return {'sucesso': false, 'mensagem': dados['mensagem'] ?? 'Erro no servidor'};
+      }
+    } catch (e) {
+      print("ERRO NA REQUISIÇÃO: $e");
+      return {'sucesso': false, 'mensagem': 'Erro de conexão: $e'};
     }
   }
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _loginController.dispose();
     _senhaController.dispose();
     super.dispose();
   }
@@ -100,23 +170,18 @@ class _LoginState extends State<Login> {
 
                 // E-mail
                 TextFormField(
-                  controller: _emailController,
+                  controller: _loginController,
                   style: const TextStyle(color: _text),
                   cursorColor: _primary,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
                   decoration: _decoration(
-                    label: 'E-mail',
-                    hint: 'exemplo@exemplo.com',
+                    label: 'Login',
+                    hint: 'Login',
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Campo obrigatório';
-                    }
-                    final email = value.trim();
-                    final regex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
-                    if (!regex.hasMatch(email)) {
-                      return 'E-mail inválido';
                     }
                     return null;
                   },
