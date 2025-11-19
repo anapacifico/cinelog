@@ -122,7 +122,6 @@ Future<Map<String, dynamic>> _fazerCadastro({
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      final dados = jsonDecode(response.body);
       return {'sucesso': true, 'mensagem': 'Cadastro realizado'};
     } else {
       final dados = jsonDecode(response.body);

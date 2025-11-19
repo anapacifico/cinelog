@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:to_do_project/models/movie.dart';
+import 'package:to_do_project/models/avaliacao.dart';
+import 'package:to_do_project/services/auth_service.dart';
 
 // ⚠️ IMPORTANTE: Você vai precisar do 'dio' para o botão de curtir
 import 'package:dio/dio.dart';
@@ -22,18 +24,65 @@ class MovieDetailPage extends StatefulWidget {
 class _MovieDetailPageState extends State<MovieDetailPage> {
   bool _isLiked = false;
   late int _likes;
+  bool _isFavorite = false;
+  bool _carregandoFavorite = false;
+  List<Avaliacao> _avaliacoes = [];
+  bool _carregandoAvaliacoes = true;
 
   static const _primary = Color.fromARGB(255, 216, 21, 7);
   
-  // <<< MUDANÇA: Adiciona o Dio para chamadas de API
   final Dio _dio = Dio(BaseOptions(baseUrl: API_BASE_URL));
 
   @override
   void initState() {
     super.initState();
     _likes = widget.movie.likes;
-    // TODO: Você precisará de uma API para saber se o usuário JÁ curtiu este filme
-    // _checkIfLiked(); 
+    _carregarAvaliacoes();
+    _verificarFavorito();
+  }
+
+  Future<void> _carregarAvaliacoes() async {
+    try {
+      final response = await _dio.get('/api/reviews/${widget.movie.id}');
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data ?? [];
+        
+        // 🆕 Pega o ID do usuário logado para filtrar curtidas
+        final usuarioLogadoId = await AuthService.getUserId();
+        
+        setState(() {
+          _avaliacoes = data.map((e) {
+            final avaliacao = Avaliacao.fromJson(e);
+            
+            // 🆕 Verifica se o usuário logado está na lista de quem curtiu
+            final curtidoPeloUsuarioLogado = 
+                usuarioLogadoId != null && 
+                avaliacao.usuariosCurtiram.contains(usuarioLogadoId);
+            
+            // 🆕 Cria nova avaliação com o estado correto
+            return Avaliacao(
+              id: avaliacao.id,
+              rating: avaliacao.rating,
+              comment: avaliacao.comment,
+              idUser: avaliacao.idUser,
+              username: avaliacao.username,
+              filmeId: avaliacao.filmeId,
+              filmeTitle: avaliacao.filmeTitle,
+              qtdCurtidas: avaliacao.qtdCurtidas,
+              criadoEm: avaliacao.criadoEm,
+              curtidoPeloUsuario: curtidoPeloUsuarioLogado,
+              usuariosCurtiram: avaliacao.usuariosCurtiram,
+            );
+          }).toList();
+          
+          _carregandoAvaliacoes = false;
+        });
+      }
+    } catch (e) {
+      print('Erro ao carregar avaliações: $e');
+      setState(() => _carregandoAvaliacoes = false);
+    }
   }
 
   // <<< MUDANÇA: O botão agora chama a API (de forma otimista)
@@ -47,12 +96,9 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
 
     // 2. Tenta enviar a mudança para a API
     try {
-      final String endpoint = '/api/v1/filmes/${widget.movie.id}/${newLikeState ? 'like' : 'unlike'}';
+      final String endpoint = '/api/filmes/${widget.movie.id}/${newLikeState ? 'like' : 'unlike'}';
       
-      // ⚠️ ATENÇÃO: Você precisa CRIAR este endpoint POST no seu Spring Boot
       await _dio.post(endpoint); 
-      
-      // Se a API funcionar, ótimo.
       
     } catch (e) {
       // 3. Se a API falhar, reverte a mudança na UI
@@ -67,6 +113,157 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
           content: Text('Erro ao registrar curtida. Tente novamente.'),
           backgroundColor: Colors.red,
         ),
+      );
+    }
+  }
+
+  Future<void> _verificarFavorito() async {
+    try {
+      final userId = await AuthService.getUserId();
+      if (userId == null) return;
+
+      // 🆕 Faz GET para verificar se está nos favoritos
+      final response = await _dio.get(
+        '/api/favorites/check',
+        queryParameters: {
+          'userId': userId,
+          'movieId': widget.movie.id,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          _isFavorite = response.data['isFavorite'] ?? false;
+        });
+      }
+    } catch (e) {
+      print('Erro ao verificar favorito: $e');
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    // 1. Atualização otimista
+    final novoEstado = !_isFavorite;
+    setState(() {
+      _isFavorite = novoEstado;
+      _carregandoFavorite = true;
+    });
+
+    try {
+      final userId = await AuthService.getUserId();
+      if (userId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Faça login para adicionar favoritos'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        setState(() => _isFavorite = !novoEstado);
+        return;
+      }
+
+      if (novoEstado) {
+        await _dio.post(
+          '/api/favorites/add',
+          data: {
+            'idUser': userId,
+            'idFilme': widget.movie.id,
+          },
+        );
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Adicionado aos favoritos!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        // Remover dos favoritos
+        await _dio.delete(
+          '/api/favorites/remove/$userId/${widget.movie.id}',
+        );
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Removido dos favoritos'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+
+      setState(() => _carregandoFavorite = false);
+    } catch (e) {
+      // Reverte se falhar
+      setState(() {
+        _isFavorite = !novoEstado;
+        _carregandoFavorite = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _abrirModalAvaliacao() {
+    showDialog(
+      context: context,
+      builder: (context) => _ModalAvaliacao(
+        movieId: widget.movie.id,
+        dio: _dio,
+        onAvaliacaoAdicionada: () {
+          _carregarAvaliacoes();
+        },
+      ),
+    );
+  }
+
+  Future<void> _curtirAvaliacao(int avaliacaoId, int indexAvaliacao) async {
+    // Encontra a avaliação pelo ID
+    final avaliacao = _avaliacoes.firstWhere((a) => a.id == avaliacaoId);
+    final estaAtualmenteCurtida = avaliacao.curtidoPeloUsuario;
+    
+    // 1. Atualização otimista na UI
+    setState(() {
+      _avaliacoes[indexAvaliacao] = Avaliacao(
+        id: avaliacao.id,
+        rating: avaliacao.rating,
+        comment: avaliacao.comment,
+        idUser: avaliacao.idUser,
+        username: avaliacao.username,
+        filmeId: avaliacao.filmeId,
+        filmeTitle: avaliacao.filmeTitle,
+        qtdCurtidas: estaAtualmenteCurtida ? avaliacao.qtdCurtidas - 1 : avaliacao.qtdCurtidas + 1,
+        criadoEm: avaliacao.criadoEm,
+        curtidoPeloUsuario: !estaAtualmenteCurtida,
+        usuariosCurtiram: avaliacao.usuariosCurtiram,
+      );
+    });
+
+    try {
+      final idUsuario = await AuthService.getUserId() ?? '';
+      
+      await _dio.post(
+        '/api/reviews/$avaliacaoId/curtir',
+        data: {
+          'curtir': !estaAtualmenteCurtida, 
+          'idUser': idUsuario,
+        },
+      );
+      
+      // Recarrega para garantir que está sincronizado com o servidor
+      _carregarAvaliacoes();
+    } catch (e) {
+      // 3. Se falhar, reverte a mudança na UI
+      setState(() {
+        _avaliacoes[indexAvaliacao] = avaliacao;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao curtir: $e')),
       );
     }
   }
@@ -142,6 +339,25 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                       ),
                     ),
                     Text('$_likes curtidas'),
+                    const SizedBox(width: 16),
+                    // 🆕 Botão de Favorito
+                    IconButton(
+                      onPressed: _carregandoFavorite ? null : _toggleFavorite,
+                      icon: Icon(
+                        _isFavorite ? Icons.bookmark : Icons.bookmark_border,
+                        color: _isFavorite ? _primary : Colors.white,
+                      ),
+                    ),
+                    Text(_isFavorite ? 'Favoritado' : 'Favoritar'),
+                    const Spacer(),
+                    ElevatedButton.icon(
+                      onPressed: _abrirModalAvaliacao,
+                      icon: const Icon(Icons.star),
+                      label: const Text('Avaliar'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _primary,
+                      ),
+                    ),
                   ],
                 ),
 
@@ -225,10 +441,10 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                   }).toList(),
                 ],
 
-                // <<< MUDANÇA: Seção de Comentários
+                // Seção de Avaliações
                 const SizedBox(height: 24),
                 const Text(
-                  'Comentários',
+                  'Avaliações',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -236,70 +452,27 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                 ),
                 const SizedBox(height: 12),
 
-                // Formulário para adicionar novo comentário
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      TextFormField(
-                        controller: _comentarioController,
-                        maxLines: 3,
-                        minLines: 1,
-                        enabled: !_isAddingComentario,
-                        decoration: InputDecoration(
-                          hintText: 'Adicione um comentário...',
-                          hintStyle: const TextStyle(color: Colors.white60),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: Colors.white30),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: Colors.white30),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: _primary),
-                          ),
-                          contentPadding: const EdgeInsets.all(12),
-                        ),
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                      const SizedBox(height: 8),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: ElevatedButton(
-                          onPressed: _isAddingComentario ? null : _adicionarComentario,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _primary,
-                            disabledBackgroundColor: Colors.grey.withOpacity(0.5),
-                          ),
-                          child: _isAddingComentario
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                  ),
-                                )
-                              : const Text('Enviar'),
+                if (_carregandoAvaliacoes)
+                  const Center(child: CircularProgressIndicator())
+                else if (_avaliacoes.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    child: Center(
+                      child: Text(
+                        'Nenhuma avaliação ainda. Seja o primeiro!',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white60,
+                          fontStyle: FontStyle.italic,
                         ),
                       ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Lista de comentários existentes
-                if (movie.comentarios != null && movie.comentarios!.isNotEmpty) ...[
-                  ...movie.comentarios!.map((comentario) {
+                    ),
+                  )
+                else
+                  ..._avaliacoes.asMap().entries.map((entry) {
+                    int index = entry.key;
+                    Avaliacao avaliacao = entry.value;
+                    
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12.0),
                       child: Container(
@@ -314,16 +487,32 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  comentario.nomeUsuario,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: _primary,
-                                  ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      avaliacao.username,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: _primary,
+                                      ),
+                                    ),
+                                    Row(
+                                      children: List.generate(5, (idx) {
+                                        return Icon(
+                                          idx < avaliacao.rating
+                                              ? Icons.star
+                                              : Icons.star_border,
+                                          size: 16,
+                                          color: _primary,
+                                        );
+                                      }),
+                                    ),
+                                  ],
                                 ),
                                 Text(
-                                  _formatarData(comentario.dataCriacao),
+                                  _formatarData(avaliacao.criadoEm),
                                   style: const TextStyle(
                                     fontSize: 12,
                                     color: Colors.white60,
@@ -333,10 +522,37 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              comentario.texto,
+                              avaliacao.comment,
                               style: const TextStyle(
                                 fontSize: 14,
                                 color: Colors.white70,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            GestureDetector(
+                              onTap: () => _curtirAvaliacao(avaliacao.id, index),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    avaliacao.curtidoPeloUsuario
+                                        ? Icons.thumb_up
+                                        : Icons.thumb_up_outlined,
+                                    size: 16,
+                                    color: avaliacao.curtidoPeloUsuario
+                                        ? _primary
+                                        : Colors.white60,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${avaliacao.qtdCurtidas}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: avaliacao.curtidoPeloUsuario
+                                          ? _primary
+                                          : Colors.white60,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -344,21 +560,6 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                       ),
                     );
                   }).toList(),
-                ] else ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
-                    child: Center(
-                      child: Text(
-                        'Nenhum comentário ainda. Seja o primeiro!',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white60,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
@@ -402,6 +603,169 @@ class _ChipInfo extends StatelessWidget {
       ),
       label: Text(text),
       backgroundColor: const Color(0xFF2C2929),
+    );
+  }
+}
+
+// Modal de Avaliação
+class _ModalAvaliacao extends StatefulWidget {
+  final int movieId;
+  final Dio dio;
+  final VoidCallback onAvaliacaoAdicionada;
+
+  const _ModalAvaliacao({
+    required this.movieId,
+    required this.dio,
+    required this.onAvaliacaoAdicionada,
+  });
+
+  @override
+  State<_ModalAvaliacao> createState() => _ModalAvaliacaoState();
+}
+
+class _ModalAvaliacaoState extends State<_ModalAvaliacao> {
+  double _rating = 0;
+  final TextEditingController _comentarioController = TextEditingController();
+  bool _carregando = false;
+  static const _primary = Color.fromARGB(255, 216, 21, 7);
+
+  @override
+  void dispose() {
+    _comentarioController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _enviarAvaliacao() async {
+    if (_rating == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecione uma avaliação')),
+      );
+      return;
+    }
+
+    setState(() => _carregando = true);
+
+    try {
+      final idUser = await AuthService.getUserId() ?? 'Anônimo';
+      
+      final userData = await AuthService.getUserData();
+      final username = userData?['username'] ?? 'Usuário Anônimo';
+      
+      await widget.dio.post(
+        '/api/reviews/add',
+        data: {
+          'rating': _rating,
+          'comment': _comentarioController.text,
+          'idUser': idUser,
+          'username': username,
+          'idFilme': widget.movieId,
+        },
+      );
+
+      widget.onAvaliacaoAdicionada();
+      
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Avaliação adicionada com sucesso!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao enviar: $e')),
+      );
+    } finally {
+      setState(() => _carregando = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: Colors.grey[900],
+      title: const Text('Avaliar Filme'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 16),
+            const Text(
+              'Nota',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(5, (index) {
+                return GestureDetector(
+                  onTap: () => setState(() => _rating = (index + 1).toDouble()),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Icon(
+                      index < _rating ? Icons.star : Icons.star_border,
+                      size: 40,
+                      color: _primary,
+                    ),
+                  ),
+                );
+              }),
+            ),
+            if (_rating > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  'Nota: ${_rating.toStringAsFixed(1)}',
+                  style: const TextStyle(color: _primary),
+                ),
+              ),
+            const SizedBox(height: 24),
+            const Text(
+              'Comentário',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _comentarioController,
+              maxLines: 4,
+              decoration: InputDecoration(
+                hintText: 'Compartilhe sua opinião...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Colors.white30),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: _primary),
+                ),
+              ),
+              style: const TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          onPressed: _carregando ? null : _enviarAvaliacao,
+          style: ElevatedButton.styleFrom(backgroundColor: _primary),
+          child: _carregando
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Enviar'),
+        ),
+      ],
     );
   }
 }

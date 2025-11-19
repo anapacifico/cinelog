@@ -21,29 +21,6 @@ class Ator {
   }
 }
 
-class Comentario {
-  final int id;
-  final String texto;
-  final String nomeUsuario;
-  final DateTime dataCriacao;
-
-  Comentario({
-    required this.id,
-    required this.texto,
-    required this.nomeUsuario,
-    required this.dataCriacao,
-  });
-
-  factory Comentario.fromJson(Map<String, dynamic> json) {
-    return Comentario(
-      id: json['id'],
-      texto: json['texto'],
-      nomeUsuario: json['usuario']['username'] ?? 'Usuário Desconhecido',
-      dataCriacao: DateTime.parse(json['dataCriacao']),
-    );
-  }
-}
-
 class Movie {
   final int id;
   final String title;
@@ -56,8 +33,7 @@ class Movie {
   final String posterUrl; 
   final List<int> genreIds; 
   final String? director; 
-  final List<Ator>? actors;
-  final List<Comentario>? comentarios; 
+  final List<Ator>? actors; 
 
   Movie({
     required this.id,
@@ -72,7 +48,6 @@ class Movie {
     required this.genreIds,
     this.director,
     this.actors,
-    this.comentarios,
   });
 
   factory Movie.fromJson(Map<String, dynamic> json) {
@@ -129,14 +104,6 @@ class Movie {
     } else {
     }
 
-    // Processa comentários
-    List<Comentario> comentarios = [];
-    if (json['comentarios'] != null && json['comentarios'] is List) {
-      comentarios = (json['comentarios'] as List)
-          .map((com) => Comentario.fromJson(com.cast<String, dynamic>()))
-          .toList();
-    }
-
     return Movie(
       id: json['id'],
       title: json['titulo'],
@@ -150,7 +117,6 @@ class Movie {
       genreIds: List<int>.from(json['generos'].map((x) => x)),
       director: director,
       actors: actors,
-      comentarios: comentarios,
     );
   }
 

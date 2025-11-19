@@ -1,11 +1,9 @@
-import 'dart:io';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart'; 
-import 'package:mime/mime.dart'; 
 import 'package:http_parser/http_parser.dart';
 
 import 'package:to_do_project/models/genero.dart';
@@ -153,7 +151,6 @@ class _AddMoviePageState extends State<AddMoviePage> {
 
   void _removeAtorForm(int index) {
     setState(() {
-      // Pega os controladores para fazer o dispose antes de remover
       final form = _atoresFormList.removeAt(index);
       form.dispose();
     });
@@ -358,7 +355,6 @@ class _AddMoviePageState extends State<AddMoviePage> {
                 "nome": atorForm.nomeController.text,
                 "personagem": atorForm.personagemController.text,
               })
-          // Filtra atores que o usuário possa ter deixado em branco
           .where((atorMap) => atorMap["nome"]!.isNotEmpty && atorMap["personagem"]!.isNotEmpty)
           .toList();
 
@@ -651,7 +647,7 @@ class _AddMoviePageState extends State<AddMoviePage> {
   // }
   Widget _buildImagePicker({
     required String title,
-    required XFile? file, // Recebe XFile?
+    required XFile? file,
     required VoidCallback onPick,
   }) {
     return GestureDetector(
@@ -664,8 +660,6 @@ class _AddMoviePageState extends State<AddMoviePage> {
           borderRadius: BorderRadius.circular(8),
         ),
         child: file != null
-            // --- A CORREÇÃO ESTÁ AQUI ---
-            // Trocamos Image.file(file) por Image.network(file.path)
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.network( 
@@ -701,7 +695,6 @@ class _AddMoviePageState extends State<AddMoviePage> {
       children: [
         const Text('Elenco', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        // --- Campo Diretor ---
         TextFormField(
           controller: _diretorController,
           decoration: const InputDecoration(
@@ -717,14 +710,12 @@ class _AddMoviePageState extends State<AddMoviePage> {
         ),
         const SizedBox(height: 16),
         
-        // --- Lista de Atores ---
         const Text('Atores', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         
-        // Constrói um formulário para cada ator na lista
         ListView.builder(
-          shrinkWrap: true, // Para o ListView funcionar dentro de outro ListView
-          physics: const NeverScrollableScrollPhysics(), // Desabilita o scroll
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
           itemCount: _atoresFormList.length,
           itemBuilder: (context, index) {
             final atorForm = _atoresFormList[index];
@@ -758,14 +749,13 @@ class _AddMoviePageState extends State<AddMoviePage> {
                         validator: (v) => v == null || v.isEmpty ? 'Obrigatório' : null,
                       ),
                     ),
-                    // Botão de remover (só aparece se houver mais de 1)
                     if (_atoresFormList.length > 1)
                       IconButton(
                         icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
                         onPressed: () => _removeAtorForm(index),
                       )
                     else
-                      const SizedBox(width: 48), // Espaço vazio para alinhar
+                      const SizedBox(width: 48),
                   ],
                 ),
               ),
@@ -773,7 +763,6 @@ class _AddMoviePageState extends State<AddMoviePage> {
           },
         ),
         
-        // Botão de Adicionar Ator
         TextButton.icon(
           onPressed: _addAtorForm,
           icon: const Icon(Icons.add_circle_outline),

@@ -78,10 +78,6 @@ class _HomePageState extends State<HomePage> {
       print('Erro genérico: $e');
     }
   }
-
-  // ---
-  // --- 3. CONSTRUÇÃO DO LAYOUT (build) ---
-  // ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -715,9 +711,10 @@ class _MovieImage extends StatelessWidget {
 
   const _MovieImage({
     required this.url,
-    this.fit = BoxFit.cover,
-    this.alignment = Alignment.center,
-  });
+    BoxFit? fit,
+    Alignment? alignment,
+  }) : fit = fit ?? BoxFit.cover,
+       alignment = alignment ?? Alignment.center;
 
   @override
   Widget build(BuildContext context) {
