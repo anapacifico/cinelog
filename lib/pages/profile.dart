@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:dio/dio.dart';
 import 'package:to_do_project/services/auth_service.dart';
 import 'package:to_do_project/pages/login.dart';
+import 'package:to_do_project/models/movie.dart';
+import 'package:to_do_project/pages/movie.detail.dart';
+
+const String API_BASE_URL = 'http://localhost:8081';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -13,10 +18,16 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   Map<String, dynamic>? _userData;
   bool _isLoading = true;
+  List<Movie> _filmesCriados = [];
+  bool _carregandoFilmes = false;
+  int _paginaAtual = 0;
+  int _totalPaginas = 0;
+  late Dio _dio;
 
   @override
   void initState() {
     super.initState();
+    _dio = Dio(BaseOptions(baseUrl: API_BASE_URL));
     _loadUserData();
   }
 
@@ -27,11 +38,49 @@ class _ProfilePageState extends State<ProfilePage> {
         _userData = userData;
         _isLoading = false;
       });
+      // Carrega os filmes após obter os dados do usuário
+      _carregarFilmesCriados();
     } catch (e) {
       print('Erro ao carregar dados do usuário: $e');
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _carregarFilmesCriados({int pagina = 0}) async {
+    if (_userData == null) return;
+    
+    try {
+      setState(() => _carregandoFilmes = true);
+      
+      final userId = _userData!['idUser']?.toString();
+      if (userId == null) return;
+
+      final response = await _dio.get(
+        '/api/filmes/adicionados/$userId',
+        queryParameters: {
+          'page': pagina,
+          'size': 10,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        final List<dynamic> filmes = data['content'] ?? [];
+        
+        setState(() {
+          _filmesCriados = filmes
+              .map((filme) => Movie.fromJson(filme as Map<String, dynamic>))
+              .toList();
+          _paginaAtual = data['pageable']?['pageNumber'] ?? 0;
+          _totalPaginas = data['totalPages'] ?? 1;
+          _carregandoFilmes = false;
+        });
+      }
+    } catch (e) {
+      print('Erro ao carregar filmes criados: $e');
+      setState(() => _carregandoFilmes = false);
     }
   }
 
@@ -172,6 +221,11 @@ class _ProfilePageState extends State<ProfilePage> {
 
                       const SizedBox(height: 50),
 
+                      // --- Seção de Filmes Adicionados ---
+                      _buildFilmesAdicionadosSection(),
+
+                      const SizedBox(height: 50),
+
                       // --- Botão de Logout ---
                       SizedBox(
                         width: double.infinity,
@@ -192,6 +246,208 @@ class _ProfilePageState extends State<ProfilePage> {
                     ],
                   ),
                 ),
+    );
+  }
+
+  Widget _buildFilmesAdicionadosSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Filmes Adicionados',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            if (_filmesCriados.isNotEmpty)
+              Text(
+                '${_paginaAtual + 1}/${_totalPaginas}',
+                style: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: 12,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        if (_carregandoFilmes && _filmesCriados.isEmpty)
+          Center(
+            child: Column(
+              children: [
+                const CircularProgressIndicator(color: Colors.purpleAccent),
+                const SizedBox(height: 12),
+                Text(
+                  'Carregando filmes...',
+                  style: TextStyle(color: Colors.grey[400]),
+                ),
+              ],
+            ),
+          )
+        else if (_filmesCriados.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 40),
+            decoration: BoxDecoration(
+              color: Colors.grey[900],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[800]!),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.movie_outlined, color: Colors.grey[600], size: 48),
+                const SizedBox(height: 12),
+                Text(
+                  'Nenhum filme adicionado ainda',
+                  style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                ),
+              ],
+            ),
+          )
+        else
+          Column(
+            children: [
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _filmesCriados.length,
+                itemBuilder: (context, index) {
+                  final filme = _filmesCriados[index];
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MovieDetailPage(movie: filme),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[900],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[800]!),
+                      ),
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(12),
+                              bottomLeft: Radius.circular(12),
+                            ),
+                            child: Image.network(
+                              filme.posterUrl,
+                              width: 60,
+                              height: 90,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                width: 60,
+                                height: 90,
+                                color: Colors.black54,
+                                child: const Icon(Icons.broken_image_outlined,
+                                    color: Colors.grey),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    filme.title,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.star,
+                                          color: Colors.amber, size: 14),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        filme.averageRating
+                                            .toStringAsFixed(1),
+                                        style: TextStyle(
+                                          color: Colors.grey[400],
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Icon(Icons.favorite,
+                                          color: Colors.redAccent, size: 14),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        filme.likes.toString(),
+                                        style: TextStyle(
+                                          color: Colors.grey[400],
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.arrow_forward_ios,
+                              color: Colors.grey, size: 14),
+                          const SizedBox(width: 12),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              // --- Controles de Paginação ---
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (_paginaAtual > 0)
+                    OutlinedButton.icon(
+                      onPressed: () =>
+                          _carregarFilmesCriados(pagina: _paginaAtual - 1),
+                      icon: const Icon(Icons.arrow_back),
+                      label: const Text('Anterior'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.purpleAccent,
+                        side: const BorderSide(
+                            color: Colors.purpleAccent, width: 1),
+                      ),
+                    ),
+                  const SizedBox(width: 12),
+                  if (_paginaAtual < _totalPaginas - 1)
+                    OutlinedButton.icon(
+                      onPressed: () =>
+                          _carregarFilmesCriados(pagina: _paginaAtual + 1),
+                      label: const Text('Próximo'),
+                      icon: const Icon(Icons.arrow_forward),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.purpleAccent,
+                        side: const BorderSide(
+                            color: Colors.purpleAccent, width: 1),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+      ],
     );
   }
 
