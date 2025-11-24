@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:to_do_project/constants.dart';
 
 // Helper para decodificar a lista da API
 List<Movie> movieListFromJson(String str) =>
@@ -55,11 +56,7 @@ class Movie {
       if (url == null || url.isEmpty) {
         return 'https://via.placeholder.com/300x450.png?text=No+Image';
       }
-      // Defina sua BASE_URL aqui. Para web: localhost, para emulador: 10.0.2.2
-      // const String API_BASE_URL = 'http://10.0.2.2:8081'; 
-      const String API_BASE_URL = 'http://localhost:8081'; // Se for rodar na WEB
-
-      return '$API_BASE_URL$url';
+      return '$API_BASE_URL$url'; // 🆕 Usa constante global
     }
 
     String? director;

@@ -2,15 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:to_do_project/models/movie.dart';
 import 'package:to_do_project/models/avaliacao.dart';
 import 'package:to_do_project/services/auth_service.dart';
-
-// ⚠️ IMPORTANTE: Você vai precisar do 'dio' para o botão de curtir
+import 'package:to_do_project/constants.dart';
 import 'package:dio/dio.dart';
-
-// ⚠️ Defina a base URL da sua API
-// Use 10.0.2.2 para o Emulador Android
-// const String API_BASE_URL = 'http://10.0.2.2:8081';
-// Use localhost para rodar na web
-const String API_BASE_URL = 'http://localhost:8081';
 
 class MovieDetailPage extends StatefulWidget {
   final Movie movie;
@@ -37,8 +30,45 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
   void initState() {
     super.initState();
     _likes = widget.movie.likes;
+    _carregarDadosFilme();
     _carregarAvaliacoes();
     _verificarFavorito();
+    _verificarLike();
+  }
+
+  Future<void> _carregarDadosFilme() async {
+    try {
+      final response = await _dio.get('/api/filmes/${widget.movie.id}');
+      
+      if (response.statusCode == 200) {
+        final filmeAtualizado = Movie.fromJson(response.data);
+        setState(() {
+          _likes = filmeAtualizado.likes;
+        });
+      }
+    } catch (e) {
+      print('Erro ao carregar dados do filme: $e');
+    }
+  }
+
+  Future<void> _verificarLike() async {
+    try {
+      final userId = await AuthService.getUserId();
+      if (userId == null) return;
+
+      final response = await _dio.get(
+        '/api/filmes/${widget.movie.id}/check-like',
+        queryParameters: {'idUser': userId},
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          _isLiked = response.data['isLiked'] ?? false;
+        });
+      }
+    } catch (e) {
+      print('Erro ao verificar like: $e');
+    }
   }
 
   Future<void> _carregarAvaliacoes() async {
@@ -48,19 +78,16 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data ?? [];
         
-        // 🆕 Pega o ID do usuário logado para filtrar curtidas
         final usuarioLogadoId = await AuthService.getUserId();
         
         setState(() {
           _avaliacoes = data.map((e) {
             final avaliacao = Avaliacao.fromJson(e);
             
-            // 🆕 Verifica se o usuário logado está na lista de quem curtiu
             final curtidoPeloUsuarioLogado = 
                 usuarioLogadoId != null && 
                 avaliacao.usuariosCurtiram.contains(usuarioLogadoId);
             
-            // 🆕 Cria nova avaliação com o estado correto
             return Avaliacao(
               id: avaliacao.id,
               rating: avaliacao.rating,
@@ -85,29 +112,24 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
     }
   }
 
-  // <<< MUDANÇA: O botão agora chama a API (de forma otimista)
   Future<void> _toggleLike() async {
-    // 1. Atualiza a UI imediatamente (otimista)
     final bool newLikeState = !_isLiked;
     setState(() {
       _isLiked = newLikeState;
       _likes += newLikeState ? 1 : -1;
     });
 
-    // 2. Tenta enviar a mudança para a API
     try {
       final String endpoint = '/api/filmes/${widget.movie.id}/${newLikeState ? 'like' : 'unlike'}';
-      
-      await _dio.post(endpoint); 
+      final userId = await AuthService.getUserId();
+      await _dio.post(endpoint, queryParameters: {'idUser': userId}); 
       
     } catch (e) {
-      // 3. Se a API falhar, reverte a mudança na UI
       print('Erro ao atualizar curtida: $e');
       setState(() {
-        _isLiked = !newLikeState; // Reverte
-        _likes += newLikeState ? -1 : 1; // Reverte
+        _isLiked = !newLikeState; 
+        _likes += newLikeState ? -1 : 1;
       });
-      // Mostra um snackbar de erro
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Erro ao registrar curtida. Tente novamente.'),
@@ -122,7 +144,6 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
       final userId = await AuthService.getUserId();
       if (userId == null) return;
 
-      // 🆕 Faz GET para verificar se está nos favoritos
       final response = await _dio.get(
         '/api/favorites/check',
         queryParameters: {
@@ -142,7 +163,6 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
   }
 
   Future<void> _toggleFavorite() async {
-    // 1. Atualização otimista
     final novoEstado = !_isFavorite;
     setState(() {
       _isFavorite = novoEstado;
@@ -178,7 +198,6 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
           ),
         );
       } else {
-        // Remover dos favoritos
         await _dio.delete(
           '/api/favorites/remove/$userId/${widget.movie.id}',
         );
@@ -193,7 +212,6 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
 
       setState(() => _carregandoFavorite = false);
     } catch (e) {
-      // Reverte se falhar
       setState(() {
         _isFavorite = !novoEstado;
         _carregandoFavorite = false;
@@ -222,11 +240,9 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
   }
 
   Future<void> _curtirAvaliacao(int avaliacaoId, int indexAvaliacao) async {
-    // Encontra a avaliação pelo ID
     final avaliacao = _avaliacoes.firstWhere((a) => a.id == avaliacaoId);
     final estaAtualmenteCurtida = avaliacao.curtidoPeloUsuario;
-    
-    // 1. Atualização otimista na UI
+  
     setState(() {
       _avaliacoes[indexAvaliacao] = Avaliacao(
         id: avaliacao.id,
@@ -253,11 +269,8 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
           'idUser': idUsuario,
         },
       );
-      
-      // Recarrega para garantir que está sincronizado com o servidor
       _carregarAvaliacoes();
     } catch (e) {
-      // 3. Se falhar, reverte a mudança na UI
       setState(() {
         _avaliacoes[indexAvaliacao] = avaliacao;
       });
@@ -280,7 +293,6 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
       ),
       body: ListView(
         children: [
-          // Capa grande (sem mudança)
           AspectRatio(
             aspectRatio: 16 / 9,
             child: Stack(
@@ -586,7 +598,6 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
   }
 }
 
-// _ChipInfo (Sem mudança)
 class _ChipInfo extends StatelessWidget {
   final IconData icon;
   final String text;
@@ -607,7 +618,6 @@ class _ChipInfo extends StatelessWidget {
   }
 }
 
-// Modal de Avaliação
 class _ModalAvaliacao extends StatefulWidget {
   final int movieId;
   final Dio dio;

@@ -1,14 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:to_do_project/models/movie.dart'; // <<< IMPORTA O NOVO MODEL
+import 'package:to_do_project/models/movie.dart';
 import 'package:to_do_project/pages/AddMoviePage.dart';
 import 'package:to_do_project/pages/movie.detail.dart';
 import 'package:to_do_project/pages/profile.dart';
+import 'package:to_do_project/constants.dart'; // 🆕 Importa constantes globais
 
 const Color kCinelogPrimary = Color.fromARGB(255, 216, 21, 7);
-
-// const String API_BASE_URL = 'http://10.0.2.2:8081';
-const String API_BASE_URL = 'http://localhost:8081';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -62,7 +60,7 @@ class _HomePageState extends State<HomePage> {
         _generoAcaoFilmes =
             generoAcaoData.map((data) => Movie.fromJson(data)).toList();
         
-        _isLoading = false; // Esconde o loading
+        _isLoading = false;
       });
     } on DioError catch (e) {
       setState(() {
@@ -163,7 +161,6 @@ class _HomePageState extends State<HomePage> {
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 24),
       children: [
-        // Usa os dados da API
         _buildSectionTitle('Em destaque'),
         _FeaturedCarousel(movies: _recentesFilmes), 
 
@@ -197,7 +194,7 @@ class _HomePageState extends State<HomePage> {
 }
 
 class _FeaturedCarousel extends StatefulWidget {
-  final List<Movie> movies; // <<< JÁ USA O MODEL NOVO
+  final List<Movie> movies;
 
   const _FeaturedCarousel({required this.movies});
 
@@ -253,7 +250,6 @@ class _FeaturedCarouselState extends State<_FeaturedCarousel> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      // <<< MUDANÇA: Passa o novo 'Movie'
                       builder: (_) => MovieDetailPage(movie: movie),
                     ),
                   );
@@ -265,7 +261,6 @@ class _FeaturedCarouselState extends State<_FeaturedCarousel> {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        // <<< MUDANÇA: 'backdropUrl' vem da 'capaUrl' da API
                         _MovieImage(url: movie.posterUrl),
                         Container(
                           decoration: const BoxDecoration(
@@ -284,7 +279,7 @@ class _FeaturedCarouselState extends State<_FeaturedCarousel> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                movie.title, // <<< VEM DA API
+                                movie.title,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -294,7 +289,7 @@ class _FeaturedCarouselState extends State<_FeaturedCarousel> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                movie.synopsis, // <<< VEM DA API
+                                movie.synopsis,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -313,7 +308,6 @@ class _FeaturedCarouselState extends State<_FeaturedCarousel> {
             },
           ),
           if (widget.movies.length > 1) ...[
-            // ... (Setas laterais não mudam) ...
             Positioned(
                 left: 0,
                 top: 0,
@@ -336,7 +330,7 @@ class _FeaturedCarouselState extends State<_FeaturedCarousel> {
 }
 
 class _HorizontalMovieList extends StatefulWidget {
-  final List<Movie> movies; // <<< JÁ USA O MODEL NOVO
+  final List<Movie> movies;
 
   const _HorizontalMovieList({required this.movies});
 
@@ -386,7 +380,6 @@ class _HorizontalMovieListState extends State<_HorizontalMovieList> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      // <<< MUDANÇA: Passa o novo 'Movie'
                       builder: (_) => MovieDetailPage(movie: movie),
                     ),
                   );
@@ -401,13 +394,12 @@ class _HorizontalMovieListState extends State<_HorizontalMovieList> {
                       Expanded(
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(10),
-                          // <<< MUDANÇA: 'posterUrl' vem da API
                           child: _MovieImage(url: movie.backdropUrl),
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        movie.title, // <<< VEM DA API
+                        movie.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontSize: 12),
@@ -419,7 +411,6 @@ class _HorizontalMovieListState extends State<_HorizontalMovieList> {
             },
           ),
           if (widget.movies.length > 1) ...[
-            // ... (Setas laterais não mudam) ...
             Positioned(
                 left: 0,
                 top: 0,
@@ -442,7 +433,7 @@ class _HorizontalMovieListState extends State<_HorizontalMovieList> {
 }
 
 class _Top10List extends StatefulWidget {
-  final List<Movie> movies; // <<< JÁ USA O MODEL NOVO
+  final List<Movie> movies;
 
   const _Top10List({required this.movies});
 
@@ -451,7 +442,6 @@ class _Top10List extends StatefulWidget {
 }
 
 class _Top10ListState extends State<_Top10List> {
-  // ... (Toda a lógica interna do _Top10List não muda) ...
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -491,8 +481,6 @@ class _Top10ListState extends State<_Top10List> {
             separatorBuilder: (_, __) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final movie = widget.movies[index];
-              // O Top10 do seu DTO não tem posição, então usamos o index
-              // Seu código original já fazia isso
               final position = movie.top10Position ?? index + 1; 
 
               return GestureDetector(
@@ -500,7 +488,6 @@ class _Top10ListState extends State<_Top10List> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      // <<< MUDANÇA: Passa o novo 'Movie'
                       builder: (_) => MovieDetailPage(movie: movie),
                     ),
                   );
@@ -510,7 +497,6 @@ class _Top10ListState extends State<_Top10List> {
             },
           ),
           if (widget.movies.length > 1) ...[
-            // ... (Setas laterais não mudam) ...
             Positioned(
                 left: 0,
                 top: 0,
@@ -551,7 +537,7 @@ class _Top10Card extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  _MovieImage(url: movie.backdropUrl), // <<< VEM DA API
+                  _MovieImage(url: movie.backdropUrl),
                   Container(
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
@@ -588,7 +574,7 @@ class _Top10Card extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          movie.title, // <<< VEM DA API
+                          movie.title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -596,10 +582,9 @@ class _Top10Card extends StatelessWidget {
                             fontSize: 15,
                           ),
                         ),
-                        // <<< MUDANÇA: O 'genre' (String) não vem da API
                         // const SizedBox(height: 4),
                         // Text(
-                        //   movie.genre, // <<< REMOVIDO
+                        //   movie.genre,
                         //   maxLines: 1,
                         //   overflow: TextOverflow.ellipsis,
                         //   style: const TextStyle(
@@ -616,7 +601,7 @@ class _Top10Card extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            movie.synopsis, // <<< VEM DA API
+            movie.synopsis,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
@@ -630,7 +615,6 @@ class _Top10Card extends StatelessWidget {
   }
 }
 
-// --- _EmptyTop10State (não muda) ---
 class _EmptyTop10State extends StatelessWidget {
   const _EmptyTop10State();
 
@@ -671,7 +655,6 @@ class _EmptyTop10State extends StatelessWidget {
   }
 }
 
-// --- _ArrowButton (não muda) ---
 class _ArrowButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
@@ -703,7 +686,6 @@ class _ArrowButton extends StatelessWidget {
   }
 }
 
-// --- _MovieImage (não muda) ---
 class _MovieImage extends StatelessWidget {
   final String url;
   final BoxFit fit;

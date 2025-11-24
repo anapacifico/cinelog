@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:to_do_project/pages/login.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:to_do_project/constants.dart';
 
 class Cadastro extends StatefulWidget {
   const Cadastro({super.key});
@@ -103,8 +104,7 @@ Future<Map<String, dynamic>> _fazerCadastro({
   required String email,
   required String senha,
 }) async {
-  //final url = Uri.parse('http://10.0.2.2:8080/auth/register');
-  final url = Uri.parse('http://localhost:8080/auth/register');
+  final url = Uri.parse('$AUTH_BASE_URL/auth/register');
   try {
     final response = await http.post(
       url,

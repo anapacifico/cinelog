@@ -1,9 +1,10 @@
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:to_do_project/constants.dart';
 
 class AuthService {
-  static const String _baseUrl = 'http://localhost:8080';
+  static const String _baseUrl = AUTH_BASE_URL;
   static const String _tokenKey = 'auth_token';
   static const String _userKey = 'user_data';
   static const String _userIdKey = 'user_id';

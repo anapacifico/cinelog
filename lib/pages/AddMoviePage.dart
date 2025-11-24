@@ -8,9 +8,7 @@ import 'package:http_parser/http_parser.dart';
 
 import 'package:to_do_project/models/genero.dart';
 import 'package:to_do_project/services/auth_service.dart';
-
-//const String API_BASE_URL = 'http://10.0.2.2:8081';
-const String API_BASE_URL = 'http://localhost:8081';
+import 'package:to_do_project/constants.dart'; 
 
 class _AtorForm {
   final nomeController = TextEditingController();
@@ -37,11 +35,6 @@ class _AddMoviePageState extends State<AddMoviePage> {
   final _duracaoController = TextEditingController();
   final _diretorController = TextEditingController();
   final List<_AtorForm> _atoresFormList = [];
-
-  //Para rodar no emulador do android
-  // DateTime? _selectedDate;
-  // File? _capaFile;
-  // File? _posterFile; 
 
   DateTime? _selectedDate;
   XFile? _capaFile; 
@@ -119,12 +112,6 @@ class _AddMoviePageState extends State<AddMoviePage> {
       final pickedFile = await _imagePicker.pickImage(source: source);
       if (pickedFile != null) {
         setState(() {
-          //Para rodar no emulador do android
-          // if (isCapa) {
-          //   _capaFile = File(pickedFile.path);
-          // } else {
-          //   _posterFile = File(pickedFile.path);
-          // }
           if (isCapa) {
             _capaFile = pickedFile; 
           } else {
@@ -184,123 +171,6 @@ class _AddMoviePageState extends State<AddMoviePage> {
     );
   }
 
-  // Para rodar no emulador do android
-  // Future<void> _submitForm() async {
-  //   if (!(_formKey.currentState?.validate() ?? false)) {
-  //     return;
-  //   }
-
-  //   if (_selectedDate == null) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('Por favor, selecione uma data'), backgroundColor: Colors.red),
-  //     );
-  //     return;
-  //   }
-  //   if (_capaFile == null) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('Por favor, selecione uma imagem de capa'), backgroundColor: Colors.red),
-  //     );
-  //     return;
-  //   }
-  //   if (_posterFile == null) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('Por favor, selecione uma imagem de poster'), backgroundColor: Colors.red),
-  //     );
-  //     return;
-  //   }
-  //   if (_generosSelecionadosId.isEmpty) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('Por favor, selecione pelo menos um gênero'), backgroundColor: Colors.red),
-  //     );
-  //     return;
-  //   }
-
-  //   setState(() {
-  //     _isSubmitting = true;
-  //   });
-
-  //   try {
-  //     final filmeDto = {
-  //       "titulo": _tituloController.text,
-  //       "descricao": _descricaoController.text,
-  //       "dataLancamento": _selectedDate!.toIso8601String().split('T').first,
-  //       "duracaoMinutos": int.parse(_duracaoController.text),
-  //       "idUser": "seu_id_de_usuario_aqui", 
-  //       "generosId": _generosSelecionadosId.toList(),
-  //     };
-      
-  //     final filmeJsonString = jsonEncode(filmeDto);
-
-  //     final capaMimeType = lookupMimeType(_capaFile!.path) ?? 'image/jpeg';
-  //     final posterMimeType = lookupMimeType(_posterFile!.path) ?? 'image/jpeg';
-    
-  //     final formData = FormData.fromMap({
-  //       'filme': MultipartFile.fromString(
-  //         filmeJsonString,
-  //         contentType: MediaType.parse('application/json'),
-  //       ),
-        
-  //       'capa': await MultipartFile.fromFile(
-  //         _capaFile!.path,
-  //         filename: 'capa.jpg', // O nome do arquivo não importa muito
-  //         contentType: MediaType.parse(capaMimeType),
-  //       ),
-        
-  //       'poster': await MultipartFile.fromFile(
-  //         _posterFile!.path,
-  //         filename: 'poster.jpg',
-  //         contentType: MediaType.parse(posterMimeType),
-  //       ),
-  //     });
-
-  //     final response = await _dio.post(
-  //       '/api/filmes',
-  //       data: formData,
-  //       onSendProgress: (sent, total) {
-  //         print('Enviando: ${((sent / total) * 100).toStringAsFixed(0)}%');
-  //       },
-  //     );
-
-  //     if (response.statusCode == 201) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(
-  //           content: Text('Filme salvo com sucesso!'),
-  //           backgroundColor: Colors.green,
-  //         ),
-  //       );
-  //       Navigator.of(context).pop();
-  //     }
-
-  //   } on DioError catch (e) {
-  //     print('Erro Dio: ${e.response?.data}'); 
-
-  //     String erroMsg = e.message ?? 'Erro desconhecido';
-  //     if (e.response?.data != null) {
-  //       erroMsg = e.response!.data.toString();
-  //     }
-
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(
-  //         content: Text('Erro ao salvar: $erroMsg'), 
-  //         backgroundColor: Colors.red,
-  //       ),
-  //     );
-  //   } catch (e) {
-  //     // Tratar outros erros
-  //     print('Erro genérico: $e');
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(
-  //         content: Text('Erro ao processar dados: $e'),
-  //         backgroundColor: Colors.red,
-  //       ),
-  //     );
-  //   } finally {
-  //     setState(() {
-  //       _isSubmitting = false;
-  //     });
-  //   }
-  // }
-
   Future<void> _submitForm() async {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return; 
@@ -335,7 +205,6 @@ class _AddMoviePageState extends State<AddMoviePage> {
     });
 
     try {
-      // Recuperar o ID do usuário logado
       final userId = await AuthService.getUserId();
       if (userId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -605,46 +474,6 @@ class _AddMoviePageState extends State<AddMoviePage> {
     );
   }
 
-  //Para rodar no emulador do android
-
-  // Widget _buildImagePicker({
-  //   required String title,
-  //   required File? file,
-  //   required VoidCallback onPick,
-  // }) {
-  //   return GestureDetector(
-  //     onTap: onPick,
-  //     child: Container(
-  //       height: 200,
-  //       width: double.infinity,
-  //       decoration: BoxDecoration(
-  //         border: Border.all(color: Colors.grey.shade400),
-  //         borderRadius: BorderRadius.circular(8),
-  //       ),
-  //       child: file != null
-  //           ? ClipRRect(
-  //               borderRadius: BorderRadius.circular(8),
-  //               child: Image.file(
-  //                 file,
-  //                 fit: BoxFit.cover,
-  //                 width: double.infinity,
-  //                 height: 200,
-  //               ),
-  //             )
-  //           // Placeholder antes de selecionar
-  //           : Center(
-  //               child: Column(
-  //                 mainAxisAlignment: MainAxisAlignment.center,
-  //                 children: [
-  //                   const Icon(Icons.add_a_photo_outlined, size: 40, color: Colors.grey),
-  //                   const SizedBox(height: 8),
-  //                   Text('Selecionar $title', style: const TextStyle(color: Colors.grey)),
-  //                 ],
-  //               ),
-  //             ),
-  //     ),
-  //   );
-  // }
   Widget _buildImagePicker({
     required String title,
     required XFile? file,
@@ -663,11 +492,10 @@ class _AddMoviePageState extends State<AddMoviePage> {
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.network( 
-                  file.path, // O .path na web é uma URL que o Image.network lê
+                  file.path,
                   fit: BoxFit.cover,
                   width: double.infinity,
                   height: 200,
-                  // Adiciona um 'errorBuilder' para o caso de a blob URL falhar
                   errorBuilder: (context, error, stackTrace) {
                     return const Center(
                       child: Icon(Icons.error, color: Colors.red),
@@ -675,7 +503,6 @@ class _AddMoviePageState extends State<AddMoviePage> {
                   },
                 ),
               )
-            // Placeholder (sem mudança)
             : Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,

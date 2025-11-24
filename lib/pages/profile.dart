@@ -5,8 +5,7 @@ import 'package:to_do_project/services/auth_service.dart';
 import 'package:to_do_project/pages/login.dart';
 import 'package:to_do_project/models/movie.dart';
 import 'package:to_do_project/pages/movie.detail.dart';
-
-const String API_BASE_URL = 'http://localhost:8081';
+import 'package:to_do_project/constants.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -38,7 +37,6 @@ class _ProfilePageState extends State<ProfilePage> {
         _userData = userData;
         _isLoading = false;
       });
-      // Carrega os filmes após obter os dados do usuário
       _carregarFilmesCriados();
     } catch (e) {
       print('Erro ao carregar dados do usuário: $e');
@@ -61,7 +59,7 @@ class _ProfilePageState extends State<ProfilePage> {
         '/api/filmes/adicionados/$userId',
         queryParameters: {
           'page': pagina,
-          'size': 10,
+          'size': 5,
         },
       );
 
@@ -81,6 +79,57 @@ class _ProfilePageState extends State<ProfilePage> {
     } catch (e) {
       print('Erro ao carregar filmes criados: $e');
       setState(() => _carregandoFilmes = false);
+    }
+  }
+
+  Future<void> _deletarFilme(int filmeId) async {
+    try {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.grey[900],
+          title: const Text('Deletar Filme', 
+              style: TextStyle(color: Colors.white)),
+          content: const Text('Tem certeza que deseja deletar este filme?',
+              style: TextStyle(color: Colors.grey)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar', 
+                  style: TextStyle(color: Colors.grey)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Deletar',
+                  style: TextStyle(color: Colors.redAccent)),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm != true) return;
+
+      final response = await _dio.delete('/api/filmes/$filmeId');
+
+      if (response.statusCode == 204 || response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Filme deletado com sucesso!'),
+            backgroundColor: Colors.greenAccent,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        _carregarFilmesCriados(pagina: _paginaAtual);
+      }
+    } catch (e) {
+      print('Erro ao deletar filme: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao deletar filme: $e'),
+          backgroundColor: Colors.redAccent,
+          duration: const Duration(seconds: 2),
+        ),
+      );
     }
   }
 
@@ -152,7 +201,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
                   child: Column(
                     children: [
-                      // --- Novo Avatar com Inicial ---
                       Container(
                         width: 100,
                         height: 100,
@@ -221,12 +269,10 @@ class _ProfilePageState extends State<ProfilePage> {
 
                       const SizedBox(height: 50),
 
-                      // --- Seção de Filmes Adicionados ---
                       _buildFilmesAdicionadosSection(),
 
                       const SizedBox(height: 50),
 
-                      // --- Botão de Logout ---
                       SizedBox(
                         width: double.infinity,
                         height: 55,
@@ -403,10 +449,31 @@ class _ProfilePageState extends State<ProfilePage> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.arrow_forward_ios,
-                              color: Colors.grey, size: 14),
-                          const SizedBox(width: 12),
+                          PopupMenuButton<String>(
+                            color: Colors.grey[900],
+                            onSelected: (value) {
+                              if (value == 'delete') {
+                                _deletarFilme(filme.id);
+                              }
+                            },
+                            itemBuilder: (BuildContext context) => [
+                              PopupMenuItem<String>(
+                                value: 'delete',
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.delete,
+                                        color: Colors.redAccent, size: 18),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      'Deletar',
+                                      style:
+                                          TextStyle(color: Colors.redAccent),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -414,7 +481,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 },
               ),
               const SizedBox(height: 16),
-              // --- Controles de Paginação ---
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
