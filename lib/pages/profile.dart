@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:dio/dio.dart';
 import 'package:to_do_project/services/auth_service.dart';
+import 'package:to_do_project/services/dio_service.dart';
 import 'package:to_do_project/pages/login.dart';
 import 'package:to_do_project/models/movie.dart';
 import 'package:to_do_project/pages/movie.detail.dart';
-import 'package:to_do_project/constants.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -21,12 +20,11 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _carregandoFilmes = false;
   int _paginaAtual = 0;
   int _totalPaginas = 0;
-  late Dio _dio;
+  final _dioService = DioService();
 
   @override
   void initState() {
     super.initState();
-    _dio = Dio(BaseOptions(baseUrl: API_BASE_URL));
     _loadUserData();
   }
 
@@ -55,7 +53,7 @@ class _ProfilePageState extends State<ProfilePage> {
       final userId = _userData!['idUser']?.toString();
       if (userId == null) return;
 
-      final response = await _dio.get(
+      final response = await _dioService.dio.get(
         '/api/filmes/adicionados/$userId',
         queryParameters: {
           'page': pagina,
@@ -109,7 +107,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
       if (confirm != true) return;
 
-      final response = await _dio.delete('/api/filmes/$filmeId');
+      final response = await _dioService.dio.delete('/api/filmes/$filmeId');
 
       if (response.statusCode == 204 || response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -180,7 +178,7 @@ class _ProfilePageState extends State<ProfilePage> {
         titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.purpleAccent))
+          ? const Center(child: CircularProgressIndicator(color: Color.fromARGB(255, 216, 21, 7)))
           : _userData == null
               ? Center(
                   child: Column(
@@ -192,7 +190,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       const SizedBox(height: 16),
                       TextButton(
                         onPressed: () => Navigator.pop(context),
-                        child: const Text('Voltar', style: TextStyle(color: Colors.purpleAccent)),
+                        child: const Text('Voltar', style: TextStyle(color: Colors.redAccent)),
                       ),
                     ],
                   ),
@@ -207,13 +205,13 @@ class _ProfilePageState extends State<ProfilePage> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: LinearGradient(
-                            colors: [Colors.purple.shade800, Colors.blue.shade800],
+                            colors: [Color.fromARGB(255, 216, 21, 7), Color.fromARGB(255, 180, 15, 5)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.purple.withOpacity(0.4),
+                              color: Color.fromARGB(255, 216, 21, 7).withOpacity(0.2),
                               blurRadius: 20,
                               spreadRadius: 5,
                             )
@@ -325,7 +323,7 @@ class _ProfilePageState extends State<ProfilePage> {
           Center(
             child: Column(
               children: [
-                const CircularProgressIndicator(color: Colors.purpleAccent),
+                const CircularProgressIndicator(color: Color.fromARGB(255, 216, 21, 7)),
                 const SizedBox(height: 12),
                 Text(
                   'Carregando filmes...',
@@ -387,14 +385,14 @@ class _ProfilePageState extends State<ProfilePage> {
                               bottomLeft: Radius.circular(12),
                             ),
                             child: Image.network(
-                              filme.posterUrl,
-                              width: 60,
-                              height: 90,
+                              filme.backdropUrl,
+                              width: 110,
+                              height: 62,
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
                                   Container(
-                                width: 60,
-                                height: 90,
+                                width: 110,
+                                height: 62,
                                 color: Colors.black54,
                                 child: const Icon(Icons.broken_image_outlined,
                                     color: Colors.grey),
@@ -491,9 +489,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       icon: const Icon(Icons.arrow_back),
                       label: const Text('Anterior'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.purpleAccent,
+                        foregroundColor: Color.fromARGB(255, 216, 21, 7),
                         side: const BorderSide(
-                            color: Colors.purpleAccent, width: 1),
+                            color: Color.fromARGB(255, 216, 21, 7), width: 1),
                       ),
                     ),
                   const SizedBox(width: 12),
@@ -504,9 +502,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       label: const Text('Próximo'),
                       icon: const Icon(Icons.arrow_forward),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.purpleAccent,
+                        foregroundColor: Color.fromARGB(255, 216, 21, 7),
                         side: const BorderSide(
-                            color: Colors.purpleAccent, width: 1),
+                            color: Color.fromARGB(255, 216, 21, 7), width: 1),
                       ),
                     ),
                 ],
@@ -538,7 +536,7 @@ class _ProfilePageState extends State<ProfilePage> {
               color: Colors.black54,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: Colors.purpleAccent, size: 24),
+            child: Icon(icon, color: Color.fromARGB(255, 216, 21, 7), size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -574,7 +572,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('ID copiado!'),
-                    backgroundColor: Colors.purpleAccent,
+                    backgroundColor: Color.fromARGB(255, 216, 21, 7),
                     duration: Duration(seconds: 1),
                   ),
                 );

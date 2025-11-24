@@ -8,3 +8,6 @@ const String AUTH_BASE_URL = 'http://10.0.2.2:8080';
 
 // const String API_BASE_URL = 'http://localhost:8081';
 // const String AUTH_BASE_URL = 'http://localhost:8080';
+
+// const String API_BASE_URL = 'http://192.168.0.21:8081';
+// const String AUTH_BASE_URL = 'http://192.168.0.21:8080';

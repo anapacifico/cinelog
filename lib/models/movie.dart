@@ -56,7 +56,14 @@ class Movie {
       if (url == null || url.isEmpty) {
         return 'https://via.placeholder.com/300x450.png?text=No+Image';
       }
-      return '$API_BASE_URL$url'; // 🆕 Usa constante global
+      // ⚠️ IMPORTANTE: As imagens são privadas e precisam do token
+      // Como Image Widget não suporta headers customizados em web,
+      // usamos o token como query parameter
+      // Isso requer que o backend aceite token via query param
+      final baseUrl = '$API_BASE_URL$url';
+      // Se usar token no query param: return '$baseUrl?token=\$token';
+      // Por enquanto, retornamos a URL base
+      return baseUrl;
     }
 
     String? director;

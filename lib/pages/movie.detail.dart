@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:to_do_project/models/movie.dart';
 import 'package:to_do_project/models/avaliacao.dart';
 import 'package:to_do_project/services/auth_service.dart';
-import 'package:to_do_project/constants.dart';
-import 'package:dio/dio.dart';
+import 'package:to_do_project/services/dio_service.dart';
 
 class MovieDetailPage extends StatefulWidget {
   final Movie movie;
@@ -24,7 +24,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
 
   static const _primary = Color.fromARGB(255, 216, 21, 7);
   
-  final Dio _dio = Dio(BaseOptions(baseUrl: API_BASE_URL));
+  final _dioService = DioService();
 
   @override
   void initState() {
@@ -38,7 +38,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
 
   Future<void> _carregarDadosFilme() async {
     try {
-      final response = await _dio.get('/api/filmes/${widget.movie.id}');
+      final response = await _dioService.dio.get('/api/filmes/${widget.movie.id}');
       
       if (response.statusCode == 200) {
         final filmeAtualizado = Movie.fromJson(response.data);
@@ -56,7 +56,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
       final userId = await AuthService.getUserId();
       if (userId == null) return;
 
-      final response = await _dio.get(
+      final response = await _dioService.dio.get(
         '/api/filmes/${widget.movie.id}/check-like',
         queryParameters: {'idUser': userId},
       );
@@ -73,7 +73,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
 
   Future<void> _carregarAvaliacoes() async {
     try {
-      final response = await _dio.get('/api/reviews/${widget.movie.id}');
+      final response = await _dioService.dio.get('/api/reviews/${widget.movie.id}');
       
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data ?? [];
@@ -122,7 +122,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
     try {
       final String endpoint = '/api/filmes/${widget.movie.id}/${newLikeState ? 'like' : 'unlike'}';
       final userId = await AuthService.getUserId();
-      await _dio.post(endpoint, queryParameters: {'idUser': userId}); 
+      await _dioService.dio.post(endpoint, queryParameters: {'idUser': userId}); 
       
     } catch (e) {
       print('Erro ao atualizar curtida: $e');
@@ -144,7 +144,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
       final userId = await AuthService.getUserId();
       if (userId == null) return;
 
-      final response = await _dio.get(
+      final response = await _dioService.dio.get(
         '/api/favorites/check',
         queryParameters: {
           'userId': userId,
@@ -183,7 +183,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
       }
 
       if (novoEstado) {
-        await _dio.post(
+        await _dioService.dio.post(
           '/api/favorites/add',
           data: {
             'idUser': userId,
@@ -198,7 +198,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
           ),
         );
       } else {
-        await _dio.delete(
+        await _dioService.dio.delete(
           '/api/favorites/remove/$userId/${widget.movie.id}',
         );
         
@@ -231,7 +231,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
       context: context,
       builder: (context) => _ModalAvaliacao(
         movieId: widget.movie.id,
-        dio: _dio,
+        dio: _dioService.dio,
         onAvaliacaoAdicionada: () {
           _carregarAvaliacoes();
         },
@@ -262,7 +262,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
     try {
       final idUsuario = await AuthService.getUserId() ?? '';
       
-      await _dio.post(
+      await _dioService.dio.post(
         '/api/reviews/$avaliacaoId/curtir',
         data: {
           'curtir': !estaAtualmenteCurtida, 

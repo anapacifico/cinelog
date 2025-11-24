@@ -4,7 +4,7 @@ import 'package:to_do_project/models/movie.dart';
 import 'package:to_do_project/pages/AddMoviePage.dart';
 import 'package:to_do_project/pages/movie.detail.dart';
 import 'package:to_do_project/pages/profile.dart';
-import 'package:to_do_project/constants.dart'; // 🆕 Importa constantes globais
+import 'package:to_do_project/services/dio_service.dart';
 
 const Color kCinelogPrimary = Color.fromARGB(255, 216, 21, 7);
 
@@ -16,7 +16,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final Dio _dio = Dio(BaseOptions(baseUrl: API_BASE_URL));
+  final _dioService = DioService();
 
   List<Movie> _top10Filmes = [];
   List<Movie> _recentesFilmes = [];
@@ -40,10 +40,10 @@ class _HomePageState extends State<HomePage> {
       });
 
       final responses = await Future.wait([
-        _dio.get('/api/filmes/top10'),
-        _dio.get('/api/filmes/recentes'),
-        _dio.get('/api/filmes/genero/Comédia'),
-        _dio.get('/api/filmes/genero/Ação'),
+        _dioService.dio.get('/api/filmes/top10'),
+        _dioService.dio.get('/api/filmes/recentes'),
+        _dioService.dio.get('/api/filmes/genero/Comédia'),
+        _dioService.dio.get('/api/filmes/genero/Ação'),
       ]);
 
       final List<dynamic> top10Data = responses[0].data;
@@ -62,7 +62,7 @@ class _HomePageState extends State<HomePage> {
         
         _isLoading = false;
       });
-    } on DioError catch (e) {
+    } on DioException catch (e) {
       setState(() {
         _errorMessage = 'Falha ao carregar filmes: ${e.message}';
         _isLoading = false;
@@ -157,25 +157,29 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    return ListView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 24),
-      children: [
-        _buildSectionTitle('Em destaque'),
-        _FeaturedCarousel(movies: _recentesFilmes), 
+    return RefreshIndicator(
+      onRefresh: _fetchData,
+      color: kCinelogPrimary,
+      child: ListView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 24),
+        children: [
+          _buildSectionTitle('Em destaque'),
+          _FeaturedCarousel(movies: _recentesFilmes), 
 
-        _buildSectionTitle('Adicionados recentemente'),
-        _HorizontalMovieList(movies: _recentesFilmes),
+          _buildSectionTitle('Adicionados recentemente'),
+          _HorizontalMovieList(movies: _recentesFilmes),
 
-        _buildSectionTitle('Comédias'),
-        _HorizontalMovieList(movies: _generoComediaFilmes),
+          _buildSectionTitle('Comédias'),
+          _HorizontalMovieList(movies: _generoComediaFilmes),
 
-        _buildSectionTitle('Ação'), 
-        _HorizontalMovieList(movies: _generoAcaoFilmes),
+          _buildSectionTitle('Ação'), 
+          _HorizontalMovieList(movies: _generoAcaoFilmes),
 
-        _buildSectionTitle('Top 10 do Cinelog'),
-        _Top10List(movies: _top10Filmes),
-      ],
+          _buildSectionTitle('Top 10 do Cinelog'),
+          _Top10List(movies: _top10Filmes),
+        ],
+      ),
     );
   }
 
@@ -714,19 +718,6 @@ class _MovieImage extends StatelessWidget {
           size: 32,
         ),
       ),
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) return child;
-        final value = loadingProgress.expectedTotalBytes != null
-            ? loadingProgress.cumulativeBytesLoaded /
-                loadingProgress.expectedTotalBytes!
-            : null;
-        return Center(
-          child: CircularProgressIndicator(
-            value: value,
-            valueColor: const AlwaysStoppedAnimation(kCinelogPrimary),
-          ),
-        );
-      },
     );
   }
 }

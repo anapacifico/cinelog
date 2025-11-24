@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -8,7 +9,7 @@ import 'package:http_parser/http_parser.dart';
 
 import 'package:to_do_project/models/genero.dart';
 import 'package:to_do_project/services/auth_service.dart';
-import 'package:to_do_project/constants.dart'; 
+import 'package:to_do_project/services/dio_service.dart'; 
 
 class _AtorForm {
   final nomeController = TextEditingController();
@@ -47,7 +48,7 @@ class _AddMoviePageState extends State<AddMoviePage> {
 
   
   final _imagePicker = ImagePicker(); 
-  final _dio = Dio(BaseOptions(baseUrl: API_BASE_URL));
+  final _dioService = DioService();
 
   @override
   void initState() {
@@ -70,7 +71,7 @@ class _AddMoviePageState extends State<AddMoviePage> {
 
   Future<void> _fetchGeneros() async {
     try {
-      final response = await _dio.get('/api/generos/list');
+      final response = await _dioService.dio.get('/api/generos/list');
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
         setState(() {
@@ -269,7 +270,7 @@ class _AddMoviePageState extends State<AddMoviePage> {
         ),
       });
 
-      final response = await _dio.post(
+      final response = await _dioService.dio.post(
         '/api/filmes',
         data: formData,
         onSendProgress: (sent, total) {
@@ -491,8 +492,8 @@ class _AddMoviePageState extends State<AddMoviePage> {
         child: file != null
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.network( 
-                  file.path,
+                child: Image.file(
+                  File(file.path),
                   fit: BoxFit.cover,
                   width: double.infinity,
                   height: 200,

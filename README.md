@@ -59,8 +59,8 @@ O projeto foi desenvolvido com arquitetura de **dois microserviços especializad
 ### Frontend
 - **Flutter** 3.9.2+
 - **Dart**
-- **HTTP Client**: `dio` 5.4.3 (chamadas REST)
-- **Storage Local**: `shared_preferences` (persistência de dados)
+- **HTTP Client**: `dio` 5.4.3 (chamadas REST com interceptadores)
+- **Storage Local**: `shared_preferences` (persistência de dados e tokens)
 - **Image Picker**: `image_picker` 1.1.2 (upload de imagens)
 
 ### Backend (Infraestrutura)
@@ -71,6 +71,7 @@ O projeto foi desenvolvido com arquitetura de **dois microserviços especializad
 - **Microserviço Filmes**: Spring Boot
   - Banco: PostgreSQL (SQL)
   - ORM: Hibernate
+  - **⚠️ Requer Token JWT** em todas as requisições
 
 ## 📦 Dependências do Projeto
 
@@ -104,7 +105,7 @@ O arquivo `lib/constants.dart` centraliza todas as configurações de URL:
 
 ```dart
 // Para Android Emulador:
-const String API_BASE_URL = 'http://10.0.2.2:8081';      # Microserviço Filmes
+const String API_BASE_URL = 'http://10.0.2.2:8081';      # Microserviço Filmes (privado)
 const String AUTH_BASE_URL = 'http://10.0.2.2:8080';     # Microserviço Auth
 
 // Para Web/Desktop (descomentar):
@@ -114,7 +115,27 @@ const String AUTH_BASE_URL = 'http://10.0.2.2:8080';     # Microserviço Auth
 
 **Nota**: `10.0.2.2` é o IP especial do Android Emulator para acessar `localhost` da máquina host.
 
-### 3. Executar a Aplicação
+### 3. Autenticação e Tokens JWT
+
+O serviço `lib/services/dio_service.dart` centraliza todas as requisições HTTP e **adiciona o token JWT automaticamente** a todas as requisições para o `API_BASE_URL`:
+
+```dart
+// DioService adiciona automaticamente:
+// Header: Authorization: Bearer <token_jwt>
+
+// Uso nos arquivos:
+final dioService = DioService();
+final response = await dioService.dio.get('/api/filmes');
+// Token já incluído automaticamente! ✅
+```
+
+**Como funciona**:
+1. Usuário faz login → Token JWT armazenado em `SharedPreferences`
+2. Toda requisição para `API_BASE_URL` passa pelo interceptador
+3. Interceptador obtém o token e adiciona no header `Authorization`
+4. Se token for inválido (401), trata o erro
+
+### 4. Executar a Aplicação
 
 ```bash
 # Android Emulator
@@ -261,7 +282,8 @@ cinelog/
 │   │   └── new_movie_request.dart # DTO para criar filme
 │   │
 │   ├── services/
-│   │   └── auth_service.dart      # 🔐 Serviço de autenticação (integra com Microserviço NoSQL)
+│   │   ├── auth_service.dart      # 🔐 Serviço de autenticação (NoSQL - DynamoDB)
+│   │   └── dio_service.dart       # 🌐 Serviço Dio centralizado com interceptador JWT
 │   │
 │   └── pages/
 │       ├── login.dart              # Tela de login
