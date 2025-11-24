@@ -26,30 +26,26 @@ O projeto foi desenvolvido com arquitetura de **dois microserviços especializad
 │ ✅ POST /auth/login      │    │ ✅ GET /api/filmes/{id}  │
 │ ✅ Logout                │    │ ✅ POST /api/filmes      │
 │                          │    │ ✅ DELETE /api/filmes/{id}
-│ 📊 Banco: NoSQL          │    │ ✅ POST /api/reviews     │
-│    (MongoDB)             │    │ ✅ GET /api/reviews/{id} │
-│                          │    │ ✅ POST /api/favorites   │
-│                          │    │ ✅ POST /api/filmes/like │
 │                          │    │                          │
-│                          │    │ 📊 Banco: SQL            │
-│                          │    │    (PostgreSQL/MySQL)    │
+│ 📊 Banco: NoSQL          │    │ 📊 Banco: SQL            │
+│    (DynamoDB)             │    │    (PostgreSQL)          │
 └──────────────────────────┘    └──────────────────────────┘
 ```
 
-### Serviço de Autenticação (NoSQL - MongoDB)
+### Serviço de Autenticação (NoSQL - DynamoDB)
 - **Porta**: 8080
-- **Tecnologia**: Node.js / Spring Boot
-- **Banco de Dados**: MongoDB (NoSQL)
+- **Tecnologia**: Spring Boot
+- **Banco de Dados**: AWS DynamoDB (NoSQL)
 - **Responsabilidades**:
   - Registro de novos usuários
   - Login e autenticação JWT
   - Gerenciamento de tokens
   - Dados de usuário (perfil, email, senha)
 
-### Serviço de Filmes (SQL - PostgreSQL/MySQL)
+### Serviço de Filmes (SQL - PostgreSQL)
 - **Porta**: 8081
-- **Tecnologia**: Node.js / Spring Boot
-- **Banco de Dados**: PostgreSQL / MySQL (SQL)
+- **Tecnologia**: Spring Boot
+- **Banco de Dados**: PostgreSQL (SQL)
 - **Responsabilidades**:
   - Catálogo de filmes (CRUD)
   - Reviews e avaliações (5 estrelas)
@@ -68,13 +64,13 @@ O projeto foi desenvolvido com arquitetura de **dois microserviços especializad
 - **Image Picker**: `image_picker` 1.1.2 (upload de imagens)
 
 ### Backend (Infraestrutura)
-- **Microserviço Auth**: Node.js / Spring Boot
-  - Banco: MongoDB (NoSQL)
+- **Microserviço Auth**: Spring Boot
+  - Banco: AWS DynamoDB (NoSQL)
   - Autenticação: JWT (JSON Web Tokens)
   
-- **Microserviço Filmes**: Node.js / Spring Boot
-  - Banco: PostgreSQL / MySQL (SQL)
-  - ORM: Hibernate / Sequelize
+- **Microserviço Filmes**: Spring Boot
+  - Banco: PostgreSQL (SQL)
+  - ORM: Hibernate
 
 ## 📦 Dependências do Projeto
 
@@ -213,29 +209,29 @@ GET    /api/filmes/{id}/check-like     # Verificar status
 
 ## 🏃 Fluxo de Dados
 
-### 1. Autenticação (NoSQL)
+### 1. Autenticação (NoSQL - DynamoDB)
 ```
 App ─────┐
          │
-         ├─> Validar email/usuário ─> MongoDB
+         ├─> Validar email/usuário ─> DynamoDB
          │
          ├─> Gerar JWT ─────────────> LocalStorage (SharedPreferences)
          │
          └─> Salvar user_id e dados
 ```
 
-### 2. Consumo de Filmes (SQL)
+### 2. Consumo de Filmes (SQL - PostgreSQL)
 ```
 App ─────┐
          │
-         ├─> GET /api/filmes ────────> Banco SQL (PostgreSQL/MySQL)
+         ├─> GET /api/filmes ────────> Banco SQL (PostgreSQL)
          │
          ├─> Desserializar JSON ────> Movie Model
          │
          └─> Renderizar na UI
 ```
 
-### 3. Verificação de Estado (SQL)
+### 3. Verificação de Estado (SQL - PostgreSQL)
 ```
 App ─────┐
          │
@@ -281,7 +277,7 @@ cinelog/
 
 ## 🔄 Fluxo de Desenvolvimento
 
-### 1. **Autenticação** (Microserviço NoSQL - MongoDB)
+### 1. **Autenticação** (Microserviço NoSQL - DynamoDB)
 ```dart
 // Fazer login
 final response = await AuthService.login(
@@ -350,60 +346,6 @@ void initState() {
 - **Animações suaves** nas transições
 - **Feedback visual** com SnackBars e modais
 
-## 📊 Banco de Dados
-
-### Microserviço Auth (NoSQL - MongoDB)
-**Coleção: users**
-```json
-{
-  "_id": ObjectId,
-  "email": "usuario@email.com",
-  "nome": "João Silva",
-  "senha": "hash_bcrypt",
-  "createdAt": ISODate,
-  "updatedAt": ISODate
-}
-```
-
-### Microserviço Filmes (SQL - PostgreSQL/MySQL)
-**Tabela: filmes**
-```sql
-CREATE TABLE filmes (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  title VARCHAR(255) NOT NULL,
-  synopsis TEXT,
-  releaseDate DATE,
-  durationMinutes INT,
-  averageRating DECIMAL(3,1),
-  likes INT DEFAULT 0,
-  backdropUrl VARCHAR(500),
-  posterUrl VARCHAR(500),
-  genreIds JSON,
-  director VARCHAR(255),
-  createdBy INT,
-  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE reviews (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  filmId INT NOT NULL,
-  userId INT NOT NULL,
-  rating INT CHECK (rating >= 1 AND rating <= 5),
-  comment TEXT,
-  likes INT DEFAULT 0,
-  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (filmId) REFERENCES filmes(id)
-);
-
-CREATE TABLE favorites (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  userId INT NOT NULL,
-  filmId INT NOT NULL,
-  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY (userId, filmId),
-  FOREIGN KEY (filmId) REFERENCES filmes(id)
-);
-```
 
 ## 🚀 Deploy
 
@@ -430,7 +372,7 @@ Este projeto é de código aberto e está disponível sob a licença MIT.
 
 ## 👨‍💻 Desenvolvedor
 
-Desenvolvido por **Eduardo** como projeto de portfólio.
+Desenvolvido por **Eduardo** e **Ana Pacifico** como projeto de portfólio e educacional.
 
 ## 📧 Contato
 
