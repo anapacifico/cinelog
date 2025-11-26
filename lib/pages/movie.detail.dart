@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import 'package:to_do_project/models/movie.dart';
-import 'package:to_do_project/models/avaliacao.dart';
-import 'package:to_do_project/services/auth_service.dart';
-import 'package:to_do_project/services/dio_service.dart';
+import 'package:CineLog/models/movie.dart';
+import 'package:CineLog/models/avaliacao.dart';
+import 'package:CineLog/services/auth_service.dart';
+import 'package:CineLog/services/dio_service.dart';
 
 class MovieDetailPage extends StatefulWidget {
   final Movie movie;

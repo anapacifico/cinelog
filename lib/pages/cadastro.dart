@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:to_do_project/pages/login.dart';
+import 'package:CineLog/pages/login.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:to_do_project/constants.dart';
+import 'package:CineLog/constants.dart';
 
 class Cadastro extends StatefulWidget {
   const Cadastro({super.key});
@@ -166,8 +166,8 @@ Future<Map<String, dynamic>> _fazerCadastro({
                   cursorColor: _primary,
                   textInputAction: TextInputAction.next,
                   decoration: _decoration(
-                    label: 'Nome completo',
-                    hint: 'Digite seu nome',
+                    label: 'Username',
+                    hint: 'Digite seu username',
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {

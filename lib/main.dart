@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:to_do_project/pages/login.dart';
+import 'package:CineLog/pages/login.dart';
 
 void main() {
   runApp(const MyApp());

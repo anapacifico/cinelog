@@ -1,8 +1,8 @@
 // lib/pages/login.dart
 import 'package:flutter/material.dart';
-import 'package:to_do_project/pages/cadastro.dart';
-import 'package:to_do_project/pages/home.dart';
-import 'package:to_do_project/services/auth_service.dart';
+import 'package:CineLog/pages/cadastro.dart';
+import 'package:CineLog/pages/home.dart';
+import 'package:CineLog/services/auth_service.dart';
 
 
 class Login extends StatefulWidget {
@@ -69,7 +69,7 @@ class _LoginState extends State<Login> {
 
       try {
         final response = await AuthService.login(
-          login: _loginController.text.trim(),
+          login: _loginController.text.toLowerCase().trim(),
           senha: _senhaController.text,
         );
 

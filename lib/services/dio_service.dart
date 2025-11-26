@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:to_do_project/constants.dart';
-import 'package:to_do_project/services/auth_service.dart';
+import 'package:CineLog/constants.dart';
+import 'package:CineLog/services/auth_service.dart';
 
 class DioService {
   static final DioService _instance = DioService._internal();

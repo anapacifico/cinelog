@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:to_do_project/services/auth_service.dart';
-import 'package:to_do_project/services/dio_service.dart';
-import 'package:to_do_project/pages/login.dart';
-import 'package:to_do_project/models/movie.dart';
-import 'package:to_do_project/pages/movie.detail.dart';
-
+import 'package:CineLog/services/auth_service.dart';
+import 'package:CineLog/services/dio_service.dart';
+import 'package:CineLog/pages/login.dart';
+import 'package:CineLog/models/movie.dart';
+import 'package:CineLog/pages/movie.detail.dart';
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 

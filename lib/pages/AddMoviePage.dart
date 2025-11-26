@@ -7,9 +7,9 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart'; 
 import 'package:http_parser/http_parser.dart';
 
-import 'package:to_do_project/models/genero.dart';
-import 'package:to_do_project/services/auth_service.dart';
-import 'package:to_do_project/services/dio_service.dart'; 
+import 'package:CineLog/models/genero.dart';
+import 'package:CineLog/services/auth_service.dart';
+import 'package:CineLog/services/dio_service.dart'; 
 
 class _AtorForm {
   final nomeController = TextEditingController();

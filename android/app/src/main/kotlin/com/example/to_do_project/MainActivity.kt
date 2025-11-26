@@ -1,4 +1,4 @@
-package com.example.to_do_project
+package com.example.CineLog
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -1,7 +1,7 @@
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:to_do_project/constants.dart';
+import 'package:CineLog/constants.dart';
 
 class AuthService {
   static const String _baseUrl = AUTH_BASE_URL;
@@ -100,7 +100,7 @@ class AuthService {
         final dados = jsonDecode(response.body);
         return {
           'sucesso': false,
-          'mensagem': dados['mensagem'] ?? 'Erro no servidor'
+          'mensagem': dados['error'] ?? 'Erro no servidor'
         };
       }
     } catch (e) {

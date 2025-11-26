@@ -1,11 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:to_do_project/models/movie.dart';
-import 'package:to_do_project/pages/AddMoviePage.dart';
-import 'package:to_do_project/pages/movie.detail.dart';
-import 'package:to_do_project/pages/profile.dart';
-import 'package:to_do_project/services/dio_service.dart';
-
+import 'package:CineLog/models/movie.dart';
+import 'package:CineLog/pages/AddMoviePage.dart';
+import 'package:CineLog/pages/movie.detail.dart';
+import 'package:CineLog/pages/profile.dart';
+import 'package:CineLog/services/dio_service.dart';
 const Color kCinelogPrimary = Color.fromARGB(255, 216, 21, 7);
 
 class HomePage extends StatefulWidget {
@@ -83,7 +82,7 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('Cinelog'),
+        title: const Text('CineLog'),
         actions: [
           GestureDetector(
             onTap: () {
@@ -176,7 +175,7 @@ class _HomePageState extends State<HomePage> {
           _buildSectionTitle('Ação'), 
           _HorizontalMovieList(movies: _generoAcaoFilmes),
 
-          _buildSectionTitle('Top 10 do Cinelog'),
+          _buildSectionTitle('Top 10 do CineLog'),
           _Top10List(movies: _top10Filmes),
         ],
       ),
@@ -647,7 +646,7 @@ class _EmptyTop10State extends StatelessWidget {
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Volte em breve para descobrir os filmes mais aclamados pela comunidade Cinelog.',
+                  'Volte em breve para descobrir os filmes mais aclamados pela comunidade CineLog.',
                   style: TextStyle(color: Colors.white70),
                 ),
               ],

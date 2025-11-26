@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:to_do_project/constants.dart';
+import 'package:CineLog/constants.dart';
 
 // Helper para decodificar a lista da API
 List<Movie> movieListFromJson(String str) =>

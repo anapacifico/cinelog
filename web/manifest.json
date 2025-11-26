@@ -1,6 +1,6 @@
 {
-    "name": "to_do_project",
-    "short_name": "to_do_project",
+    "name": "CineLog",
+    "short_name": "CineLog",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
