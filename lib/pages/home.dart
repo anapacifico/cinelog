@@ -38,29 +38,43 @@ class _HomePageState extends State<HomePage> {
         _errorMessage = null;
       });
 
-      final responses = await Future.wait([
-        _dioService.dio.get('/api/filmes/top10'),
-        _dioService.dio.get('/api/filmes/recentes'),
-        _dioService.dio.get('/api/filmes/genero/Comédia'),
-        _dioService.dio.get('/api/filmes/genero/Ação'),
-      ]);
+      try {
+        final recentesResponse = await _dioService.dio.get('/api/filmes/recentes');
+        final List<dynamic> recentesData = recentesResponse.data;
+        setState(() {
+          _recentesFilmes =
+              recentesData.map((data) => Movie.fromJson(data)).toList();
+        });
+      } catch (e) {
+        print('Erro ao carregar recentes: $e');
+      }
 
-      final List<dynamic> top10Data = responses[0].data;
-      final List<dynamic> recentesData = responses[1].data;
-      final List<dynamic> generoData = responses[2].data['content'];
-      final List<dynamic> generoAcaoData = responses[3].data['content'];
+      try {
+        final responses = await Future.wait([
+          _dioService.dio.get('/api/filmes/top10'),
+          _dioService.dio.get('/api/filmes/genero/Comédia'),
+          _dioService.dio.get('/api/filmes/genero/Ação'),
+        ]);
 
-      setState(() {
-        _top10Filmes = top10Data.map((data) => Movie.fromJson(data)).toList();
-        _recentesFilmes =
-            recentesData.map((data) => Movie.fromJson(data)).toList();
-        _generoComediaFilmes =
-            generoData.map((data) => Movie.fromJson(data)).toList();
-        _generoAcaoFilmes =
-            generoAcaoData.map((data) => Movie.fromJson(data)).toList();
-        
-        _isLoading = false;
-      });
+        final List<dynamic> top10Data = responses[0].data;
+        final List<dynamic> generoData = responses[1].data['content'];
+        final List<dynamic> generoAcaoData = responses[2].data['content'];
+
+        setState(() {
+          _top10Filmes = top10Data.map((data) => Movie.fromJson(data)).toList();
+          _generoComediaFilmes =
+              generoData.map((data) => Movie.fromJson(data)).toList();
+          _generoAcaoFilmes =
+              generoAcaoData.map((data) => Movie.fromJson(data)).toList();
+          
+          _isLoading = false;
+        });
+      } catch (e) {
+        print('Erro ao carregar outros filmes: $e');
+        setState(() {
+          _isLoading = false;
+        });
+      }
     } on DioException catch (e) {
       setState(() {
         _errorMessage = 'Falha ao carregar filmes: ${e.message}';
@@ -585,16 +599,6 @@ class _Top10Card extends StatelessWidget {
                             fontSize: 15,
                           ),
                         ),
-                        // const SizedBox(height: 4),
-                        // Text(
-                        //   movie.genre,
-                        //   maxLines: 1,
-                        //   overflow: TextOverflow.ellipsis,
-                        //   style: const TextStyle(
-                        //     color: Colors.white70,
-                        //     fontSize: 12,
-                        //   ),
-                        // ),
                       ],
                     ),
                   ),
